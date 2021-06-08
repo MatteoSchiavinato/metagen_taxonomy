@@ -1,0 +1,62 @@
+#!/usr/bin/env Rscript
+
+# packages
+library(ggplot2)
+library(reshape2)
+
+# arguments
+args <- commandArgs(trailingOnly=T)
+infile <- args[1]
+level <- args[2]
+
+# read input file
+x <- read.table(infile, header=T, sep="\t")
+x <- melt(x, id_vars=c("Taxa"))
+colnames(x) <- c("Taxa", "Sample", "Relative_abundance")
+
+# create color vector
+myColors <- c('#D7949D', '#e7d4e8', '#1b7837', '#d9f0d3', '#7fbf7b', '#762a83', '#d73027',
+'#af8dc3', '#f46d43', '#4575b4', '#fdae61', '#3C3C3C', '#939393', '#fee090', '#abd9e9',
+'#74add1', '#D7949D', '#1b7837', '#d9f0d3', '#fee090', '#762a83', '#af8dc3', '#7fbf7b',
+'#fdae61', '#3C3C3C', '#f46d43', '#abd9e9', '#74add1')
+myColors <- head(myColors, n=length(levels(x$Taxa)))
+names(myColors) <- levels(x$Taxa)
+myColors["Other"] = "grey70"
+
+# put "Other" at the end of the legend
+# by putting it at the end of the levels
+newLevels <- levels(x$Taxa)[! levels(x$Taxa) == "Other"]
+newLevels <- append(newLevels, c("Other"))
+x$Taxa <- factor(x$Taxa, levels=newLevels)
+
+# define plot dimensions
+plotHeight <- 1400
+plotWidth <- 400 + 200 * length(levels(x$Taxa))
+plotRes <- 350
+
+# plot - facet timepoint
+P1 <- ggplot(data=x, mapping=aes(x=Sample, y=Relative_abundance, fill=Taxa)) +
+theme(plot.title=element_text(family="sans", face="bold",
+					colour='#261A1A', size=11),
+	axis.title.x=element_text(family="sans", face="bold",
+					colour='#261A1A', size=9),
+	axis.title.y=element_text(family="sans", face="bold",
+					colour='#261A1A', size=9),
+	axis.text.x=element_text(family="sans", face="plain", colour='#261A1A', size=9, vjust=0.5, hjust=1, angle=90),
+	axis.text.y=element_text(family="sans", face="plain", colour='#261A1A', size=9),
+	legend.text=element_text(family="sans", face="italic", colour='#000000', size=8),
+	legend.title=element_text(family="sans", face="bold", colour='#000000', size=9),
+	panel.background=element_rect(fill='white', colour='white'),
+	aspect.ratio=0.40) +
+geom_bar(position="fill", stat="identity") +
+ggtitle("") +
+xlab("Sample") + ylab("Relative abundance") +
+scale_fill_manual(name=level, values=myColors)
+
+png(paste(infile, "png", sep="."), height=plotHeight, width=plotWidth, res=plotRes)
+P1
+dev.off()
+
+svg(paste(infile, "svg", sep="."))
+P1
+dev.off()
