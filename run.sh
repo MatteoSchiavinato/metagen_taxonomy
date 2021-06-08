@@ -27,7 +27,7 @@ main.nf \
 --threads 48 \
 --ccs_dir ${WD}/filt_reads \
 --extension no_host.no_human.fasta \
---kraken2_db /binfl/lv71579/schmat90/software/kraken2/maxikraken2_1903_140GB \
+--kraken_db /binfl/lv71579/schmat90/software/kraken2/maxikraken2_1903_140GB \
 --kraken_db_read_len 100 \
 --min_confidence 0.25 \
 --min_hit_groups 2 \

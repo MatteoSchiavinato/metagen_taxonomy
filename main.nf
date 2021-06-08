@@ -61,7 +61,7 @@ process kraken2 {
     if [ ! -d ${sample_id} ]; then mkdir ${sample_id}; fi &&
     { \
     ${KRAKEN2} \
-    --db ${params.kraken2_db} \
+    --db ${params.kraken_db} \
     --threads ${params.threads} \
     --unclassified-out ${sample_id}/${sample_id}.uncl.fa \
     --output ${sample_id}/${sample_id}.out \
@@ -98,9 +98,9 @@ process bracken {
     """
     unset X &&
     declare -a X=(S G F O C P D) &&
-    { \
     for LEVEL in \${X[@]}
     do
+      { \
       if [ ! -d \${LEVEL} ]; then mkdir \${LEVEL}; fi &&
       ${BRACKEN} \
       -d ${params.kraken_db} \
@@ -109,9 +109,9 @@ process bracken {
       -w \${LEVEL}/${sample_id}.\${LEVEL}.bracken.report \
       -r ${params.kraken_db_read_len} \
       -l \${LEVEL} \
-      -t ${params.min_counts}
+      -t ${params.min_counts} \
+      &> \${LEVEL}/${sample_id}.bracken.log
     done; } \
-    &> \${LEVEL}/${sample_id}.bracken.log \
 
     """
 }
