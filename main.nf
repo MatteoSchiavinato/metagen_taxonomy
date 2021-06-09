@@ -109,9 +109,9 @@ process bracken {
       -w \${LEVEL}/${sample_id}.\${LEVEL}.bracken.report \
       -r ${params.kraken_db_read_len} \
       -l \${LEVEL} \
-      -t ${params.min_counts} \
+      -t ${params.min_counts}; } \
       &> \${LEVEL}/${sample_id}.bracken.log
-    done; } \
+    done \
 
     """
 }
