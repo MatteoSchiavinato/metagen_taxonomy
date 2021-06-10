@@ -26,15 +26,54 @@ kraken2-inspect --db .
 
 The first commands create a folder and download the three components of the database inside. The inspect command from kraken2 instead checks if everything is in place. It can take up to 30 minutes, so run it when you can have a break. It outputs a list of species found and other details about the database which may be useful to your publications, so save its output to a file.
 
+Another way is to build the database yourself. Maxikraken often doesn't work at the bracken stage because they don't provide the `kmer_distrib` file that is needed for bracken to work. Hence, you can build your own database and then use it. To do so, you can use `kraken2-build` in the folder where to create the database, making sure that you download both the library and the taxonomy files.
+
+```
+kraken2-build \
+--download-library nt \
+--download-taxonomy \
+--build \
+--db <your_database_path_and_name> \
+--threads 16 \
+--use-ftp \
+```
+
+Once this has finished, you can also run `bracken-build` in the same directory to create kmer abundance estimations.
+
+```
+bracken-build \
+-k KMER_LEN \
+-l READ_LEN \
+-d MY_DB \
+-x K_INSTALLATION \
+-t THREADS
+```
+
+The `-k` option defines the k-mer length and is usually at least 1/2 of the read length. The `-l` option defines the average read length of the reads you're planning to map. The `-d` option is the path to the database that you created with `kraken2-build` (`--db` flag). The `-x` option is the path to the directory containing the `kraken2` and the `kraken2-build` executables. The `-t` option defines threads.
+
+Once this command has finished, you have built the database properly and can use the pipeline.  
+
+
 ### Running the pipeline
 
-The pipeline can be run using the `run.sh` script contained in the repository, just make sure to adjust the paths. Also, make sure you adjust the content of the `nextflow.config` file, changing the executables according to your own environment / `$PATH`. Check the default values of each command-line parameter of the pipeline and change them accordingly if you want to use something different. Then, run the pipeline with:
+The pipeline can be run using the `run.sh` script contained in the repository, just make sure to adjust the paths. Also, make sure you adjust the content of the `nextflow.config` file, changing the executables according to your own environment / `$PATH`. Check the default values of each command-line parameter of the pipeline and change them accordingly if you want to use something different.
 
-```
-nextflow run main.nf
-```
+##### Dependencies
 
-If you don't want to change the content of the `nextflow.config` file, just pass its config parameters as command line parameters, like in this example:
+This pipeline depends on the following programs in the `$PATH`. You can also not put them in the `$PATH` but in that case you have to explicitly declare their path in the `nextflow.config` file.
+
+| Program | Version | Type          | Link                                               |
+|---------|---------|---------------|----------------------------------------------------|
+| Kraken2 | 2.1.1   | Program       | https://github.com/DerrickWood/kraken2/wiki/Manual |
+| Bracken | 2.6.2   | Program       | https://ccb.jhu.edu/software/bracken/              |
+| Python  | 3.6.*   | Interpreter   | https://www.python.org/downloads/                  |
+| Pandas  | 1.0.*   | Python module | https://pandas.pydata.org/                         |
+| Rscript | 3.5.*   | Interpreter   | https://cran.r-project.org/                        |
+
+
+##### Run
+
+Then, run the pipeline with a command like this one, which will also generate a report, a timeline and a direct acyclic graph for the proceeding of the pipeline itself: 
 
 ```
 nextflow \
@@ -49,7 +88,7 @@ main.nf \
 --threads 48 \
 --ccs_dir /path/to/reads \
 --extension fasta \
---kraken_db /path/to/maxikraken2_1903_140GB \
+--kraken_db /path/to/kraken_database \
 --kraken_db_read_len 100 \
 --min_confidence 0.25 \
 --min_hit_groups 2 \

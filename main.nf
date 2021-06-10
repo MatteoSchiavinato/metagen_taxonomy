@@ -100,9 +100,8 @@ process bracken {
     declare -a X=(S G F O C P D) &&
     for LEVEL in \${X[@]}
     do
-      { \
       if [ ! -d \${LEVEL} ]; then mkdir \${LEVEL}; fi &&
-      ${BRACKEN} \
+      { ${BRACKEN} \
       -d ${params.kraken_db} \
       -i ${report} \
       -o \${LEVEL}/${sample_id}.\${LEVEL}.bracken \
@@ -139,6 +138,8 @@ process plot_relative_abundance {
     file "RES.${level}.rel_abundance.tsv" into bracken_frac
     file "RES.${level}.rel_abundance.top_${params.max_species}.tsv" into bracken_top
     file "RES.${level}.counts.tsv" into bracken_counts
+    file "RES.${level}.rel_abundance.top_${params.max_species}.tsv.png" into bracken_top_png
+    file "RES.${level}.rel_abundance.top_${params.max_species}.tsv.svg" into bracken_top_svg
 
   script:
     """

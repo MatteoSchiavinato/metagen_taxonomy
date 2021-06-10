@@ -93,7 +93,7 @@ Top_entries = df_frac.mean(axis=1).sort_values(ascending=False).head(args.max_sp
 Nontop_entries = [entry for entry in df_frac.index.to_list() if entry not in Top_entries]
 df_frac_nontop = df_frac.loc[Nontop_entries , :]
 df_top = df_frac.loc[Top_entries , :]
-df_nontop = df_frac_nontop.sum(axis=0)quit()
+df_nontop = df_frac_nontop.sum(axis=0)
 
 
 df_nontop = df_nontop.rename("Other")
