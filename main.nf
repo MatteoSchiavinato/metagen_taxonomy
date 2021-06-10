@@ -86,6 +86,7 @@ process bracken {
     tuple val(sample_id), file(report) from Counts
 
   output:
+    path "${sample_id}" into Bracken_out
     tuple val("S"), path("S") into Bracken_S
     tuple val("G"), path("G") into Bracken_G
     tuple val("F"), path("F") into Bracken_F
@@ -96,20 +97,21 @@ process bracken {
 
   script:
     """
+    if [ ! -d ${sample_id} ]; then mkdir ${sample_id}; fi &&
     unset X &&
     declare -a X=(S G F O C P D) &&
     for LEVEL in \${X[@]}
     do
-      if [ ! -d \${LEVEL} ]; then mkdir \${LEVEL}; fi &&
+      if [ ! -d \${LEVEL} ]; then mkdir ${sample_id}/\${LEVEL}; fi &&
       { ${BRACKEN} \
       -d ${params.kraken_db} \
       -i ${report} \
-      -o \${LEVEL}/${sample_id}.\${LEVEL}.bracken \
-      -w \${LEVEL}/${sample_id}.\${LEVEL}.bracken.report \
+      -o ${sample_id}/\${LEVEL}/${sample_id}.\${LEVEL}.bracken \
+      -w ${sample_id}/\${LEVEL}/${sample_id}.\${LEVEL}.bracken.report \
       -r ${params.kraken_db_read_len} \
       -l \${LEVEL} \
       -t ${params.min_counts}; } \
-      &> \${LEVEL}/${sample_id}.bracken.log
+      &> ${sample_id}/\${LEVEL}/${sample_id}.bracken.log
     done \
 
     """
