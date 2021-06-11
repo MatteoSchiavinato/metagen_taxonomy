@@ -98,9 +98,9 @@ main.nf \
 
 ### Output
 
-The pipeline creates a directory called `taxonomy` inside the declared `--ouptut_dir`. Within this directory, there will be four subdirectories: `kraken`, `bracken`, `rel_abundance` and `diversity`. The first one represents the read counts per taxon as obtained by **kraken2**, which are however only intermediate files. In fact, the pipeline passes these files to **bracken** for abundance re-estimation. The results of bracken are contained in the `bracken` subdirectory.
+The pipeline creates a directory called `taxonomy` inside the declared `--ouptut_dir`. Within this directory, there will be four subdirectories: `kraken`, `bracken`, `rel_abundance` and `diversity`. The first one will contain one subdirectory per analyzed sample. Each sample directory will contain the read counts per taxon as obtained by **kraken2**, which are however only intermediate files. In fact, the pipeline passes these files to **bracken** for abundance re-estimation. The results of bracken are contained in the `bracken` subdirectory.
 
-Inside the `bracken` subdirectory, there are seven other directories: S, G, F, C, O, P, D. These stand for species, genus, family, class, order, phylum, domain. The abundance re-estimation is performed at each of these levels, so you can choose what level you prefer to consider for your analysis later on.
+Inside the `bracken` subdirectory, there will be one folder for each sample. Each of these sample folders will contain seven other directories: S, G, F, C, O, P, D. These stand for species, genus, family, class, order, phylum, domain. The abundance re-estimation is performed at each of these levels, so you can choose what level you prefer to consider for your analysis later on.
 
 The files contained inside `rel_abundance` will be **relative abundance** plots (both in svg and png) based on the top 10 most represented taxa. There will be one plot for each taxonomic level (S,G,F,C,O,P,D). The associated relative abundance values are contained in the `*.rel_abundance.*` tables. The raw counts from which the relative abundance was estimated are also contained, in files that carry the keyword `*.counts.*`.
 
