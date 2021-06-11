@@ -87,13 +87,13 @@ process bracken {
 
   output:
     path "${sample_id}" into Bracken_out
-    tuple val("S"), path("S") into Bracken_S
-    tuple val("G"), path("G") into Bracken_G
-    tuple val("F"), path("F") into Bracken_F
-    tuple val("C"), path("C") into Bracken_C
-    tuple val("O"), path("O") into Bracken_O
-    tuple val("P"), path("P") into Bracken_P
-    tuple val("D"), path("D") into Bracken_D
+    tuple val("S"), path("${sample_id}/S") into Bracken_S
+    tuple val("G"), path("${sample_id}/G") into Bracken_G
+    tuple val("F"), path("${sample_id}/F") into Bracken_F
+    tuple val("C"), path("${sample_id}/C") into Bracken_C
+    tuple val("O"), path("${sample_id}/O") into Bracken_O
+    tuple val("P"), path("${sample_id}/P") into Bracken_P
+    tuple val("D"), path("${sample_id}/D") into Bracken_D
 
   script:
     """
@@ -131,7 +131,7 @@ process plot_relative_abundance {
 
   cpus = 1
   executor = "local"
-  publishDir "${params.output_dir}/taxonomy", mode: "copy"
+  publishDir "${params.output_dir}/taxonomy/rel_abundance", mode: "copy"
 
   input:
     tuple val(level), path(level_reports) from Bracken_reports
