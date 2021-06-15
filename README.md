@@ -100,12 +100,24 @@ main.nf \
 - You can specify where to save the temporary files of the pipeline by specifying a `-work-dir` directory right after `run`. More info on that and on other options available in `nextflow run` can be found [here](https://www.nextflow.io/docs/latest/cli.html#clean).
 - The `work` directory tends to become quite crowded and full thousands of internal nextflow files, so every now and then make sure you clean it with `nextflow clean`. More info [here](https://www.nextflow.io/docs/latest/cli.html#clean)
 
+##### Editing the pipeline
+
+If you don't like the plots, if you want to change something in the code to accustom it to your own taste, you can edit directly the `Rscript` or `py` files inside the `/src` directory of the git repository that you cloned. 
+
 ### Output
 
-The pipeline creates a directory called `taxonomy` inside the declared `--ouptut_dir`. Within this directory, there will be four subdirectories: `kraken`, `bracken`, `rel_abundance` and `diversity`. The first one will contain one subdirectory per analyzed sample. Each sample directory will contain the read counts per taxon as obtained by **kraken2**, which are however only intermediate files. In fact, the pipeline passes these files to **bracken** for abundance re-estimation. The results of bracken are contained in the `bracken` subdirectory.
+The pipeline creates a directory called `taxonomy` inside the declared `--ouptut_dir`. Within this directory, there will be four subdirectories: `kraken`, `bracken`, `rel_abundance` and `diversity`.
+
+##### Read classification
+
+The `kraken` directory will contain one subdirectory per analyzed sample. Each sample directory will contain the read counts per taxon as obtained by **kraken2**, which are however only intermediate files. In fact, the pipeline passes these files to **bracken** for abundance re-estimation. The results of bracken are contained in the `bracken` subdirectory.
 
 Inside the `bracken` subdirectory, there will be one folder for each sample. Each of these sample folders will contain seven other directories: S, G, F, C, O, P, D. These stand for species, genus, family, class, order, phylum, domain. The abundance re-estimation is performed at each of these levels, so you can choose what level you prefer to consider for your analysis later on.
 
+##### Relative abundance
+
 The files contained inside `rel_abundance` will be **relative abundance** plots (both in svg and png) based on the top 10 most represented taxa. There will be one plot for each taxonomic level (S,G,F,C,O,P,D). The associated relative abundance values are contained in the `*.rel_abundance.*` tables. The raw counts from which the relative abundance was estimated are also contained, in files that carry the keyword `*.counts.*`.
+
+##### Alpha and beta diversity
 
 The files inside `diversity` represents diversity plots and tables [ ... to be continued ... ]
