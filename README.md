@@ -62,13 +62,19 @@ The pipeline can be run using the `run.sh` script contained in the repository, j
 
 This pipeline depends on the following programs in the `$PATH`. You can also not put them in the `$PATH` but in that case you have to explicitly declare their path in the `nextflow.config` file.
 
-| Program | Version | Type          | Link                                               |
-|---------|---------|---------------|----------------------------------------------------|
-| Kraken2 | 2.1.1   | Program       | https://github.com/DerrickWood/kraken2/wiki/Manual |
-| Bracken | 2.6.2   | Program       | https://ccb.jhu.edu/software/bracken/              |
-| Python  | 3.6.*   | Interpreter   | https://www.python.org/downloads/                  |
-| Pandas  | 1.0.*   | Python module | https://pandas.pydata.org/                         |
-| Rscript | 3.5.*   | Interpreter   | https://cran.r-project.org/                        |
+| Program  | Version | Type          | Link                                                            |
+|----------|---------|---------------|-----------------------------------------------------------------|
+| Kraken2  | 2.1.1   | Program       | https://github.com/DerrickWood/kraken2/wiki/Manual              |
+| Bracken  | 2.6.2   | Program       | https://ccb.jhu.edu/software/bracken/                           |
+| Python   | 3.6.*   | Interpreter   | https://www.python.org/downloads/                               |
+| Pandas   | 1.0.*   | Python module | https://pandas.pydata.org/                                      |
+| Rscript  | 3.5.*   | Interpreter   | https://cran.r-project.org/                                     |
+| dplyr    | 1.0.6   | R package     | https://dplyr.tidyverse.org/                                    |
+| ggplot2  | 3.3.3   | R package     | https://ggplot2.tidyverse.org/reference/                        |
+| ggpubr   | 0.4.0   | R package     | https://rpkgs.datanovia.com/ggpubr/                             |
+| reshape2 | 1.4.4   | R package     | https://www.rdocumentation.org/packages/reshape2/versions/1.4.4 |
+| rstatix  | 0.7.0   | R package     | https://cran.r-project.org/web/packages/rstatix/index.html      |
+| vegan    | 2.5.*   | R package     | https://cran.r-project.org/web/packages/vegan/vegan.pdf         |
 
 
 ##### Run
@@ -102,7 +108,7 @@ main.nf \
 
 ##### Editing the pipeline
 
-If you don't like the plots, if you want to change something in the code to accustom it to your own taste, you can edit directly the `Rscript` or `py` files inside the `/src` directory of the git repository that you cloned. 
+If you don't like the plots, if you want to change something in the code to accustom it to your own taste, you can edit directly the `Rscript` or `py` files inside the `/src` directory of the git repository that you cloned.
 
 ### Output
 
@@ -120,4 +126,4 @@ The files contained inside `rel_abundance` will be **relative abundance** plots 
 
 ##### Alpha and beta diversity
 
-The files inside `diversity` represents diversity plots and tables [ ... to be continued ... ]
+The files inside `diversity` represents **diversity** tables. Each table represents a diversity analysis performed at a different taxonomic level (S,G,F,C,O,P,D). The diversity scores are obtined from the `*.counts.*` tables found inside the `rel_abundance` directory. The diversity analysis performed includes alpha diversity (richness, evenness) and beta diversity (dissimilarity). The evenness values depend on the setting chosen with `--evenness`. The setting influences the type of calculation performed, see R documentation for details. The same applies to the `--dissimilarity` option. Default settings are `--evenness shannon` and `--dissimilarity bray`, which are commonly employed in metagenomic workflows.

@@ -18,6 +18,16 @@ if (params.help) {
   --ccs_dir               Directory containing FASTA files with ccs reads
   --extension             Extension of the FASTA files (fa)
 
+  ### diversity ###
+
+  --evenness              One of: "shannon", "simpson", "invsimpson"
+                          (shannon)
+  --dissimilarity         One of: "bray", "jaccard", "manhattan", "euclidean",
+                          "canberra", "clark", "kulczynski", "gower", "altGower",
+                          "morisita", "horn", "mountford", "raup", "binomial",
+                          "chao", "cao", "mahalanobis", "chisq", "chord"
+                          (bray)
+
   ### plotting ###
 
   --max_species           Max. number of species to include in the plot (10)
@@ -190,7 +200,7 @@ process plot_relative_abundance {
   output:
     file "RES.${level}.rel_abundance.tsv" into bracken_frac
     file "RES.${level}.rel_abundance.top_${params.max_species}.tsv" into bracken_top
-    file "RES.${level}.counts.tsv" into bracken_counts
+    tuple val(level), file("RES.${level}.counts.tsv") into Bracken_counts
     file "RES.${level}.rel_abundance.top_${params.max_species}.tsv.png" into bracken_top_png
     file "RES.${level}.rel_abundance.top_${params.max_species}.tsv.svg" into bracken_top_svg
 
@@ -211,6 +221,33 @@ process plot_relative_abundance {
     """
 }
 
-// compute richness and diversity
+// compute diversity metrics
 
-// plot richness and diversity
+process diversity {
+
+  cpus = 1
+  executor = "local"
+  publishDir "${params.output_dir}/taxonomy/diversity", mode: "copy"
+
+  input:
+    tuple val(level), file(counts) from Bracken_counts
+
+  output:
+    file "RES.${level}.counts.diversity.tsv" into Diversity
+
+  script:
+    """
+    ${RSCRIPT} \
+    ${params.source_dir}/diversity-analysis.Rscript \
+    ${counts} \
+    . \
+    ${level} \
+    ${params.evenness} \
+    ${params.dissimilarity} \
+
+    """
+
+}
+
+
+// plot diversity

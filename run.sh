@@ -33,6 +33,8 @@ main.nf \
 --min_hit_groups 2 \
 --min_counts 10 \
 --max_species 10 \
+--evenness shannon \
+--dissimilarity bray \
 
 """ \
 > cmd.sbatch

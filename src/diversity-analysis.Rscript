@@ -1,0 +1,61 @@
+#!/usr/bin/env Rscript
+
+# packages
+library("ggplot2")
+library("vegan")
+library("reshape2")
+library("ggpubr")
+library("rstatix")
+library("dplyr")
+
+# read arguments
+args <- commandArgs(trailingOnly=TRUE)
+infile <- args[1]
+output_dir <- args[2]
+taxa_level <- args[3]
+evenness_method <- args[4]
+dissimilarity_method <- args[5]
+
+# read dataframe
+x <- read.table(infile, header=T, row.names=1, sep="\t")
+
+# ------------------------------------------------------------------------------
+# ALPHA DIVERSITY
+
+# calculate richness for each sample
+# MARGIN = 1 would compute the counts for each species (rows)
+# MARGIN = 2 computes the counts for each sample (columns)
+alpha_rich <- specnumber(x, MARGIN=2)
+
+# calculate evenness for every sample
+# same rules apply to the MARGIN parameter
+alpha_div <- diversity(x, index=evenness_method, MARGIN=2)
+
+
+# ------------------------------------------------------------------------------
+# BETA DIVERSITY
+
+# calculate bray-curtis dissimilarity
+# transposing the dataframe  first, to have samples on rows
+transposed_x <- t(x)
+beta_diss <- vegdist(transposed_x, method=dissimilarity_method, binary=TRUE, diag=TRUE, upper=TRUE)
+
+# perform non-metric multi-dimensional scaling (NMDS) of the dissimilarity
+# using the same distance index used for the dissimilarity
+# in this case: "bray" (i.e. bray-curtis)
+beta_nmds <- metaMDS( beta_diss, distance = dissimilarity_method, plot = FALSE)
+
+# save points for plotting
+# points correspond to MDS1 and MDS2
+beta_nmds <- as.data.frame(beta_nmds$points)
+
+# ------------------------------------------------------------------------------
+# TABLE
+
+x <- cbind(alpha_rich, alpha_div, beta_nmds)
+x <- cbind(row.names(x), x)
+row.names(x) <- NULL
+colnames(x) <- c("Sample", "Richness", "Evenness", "MDS1", "MDS2")
+output_file <- paste("RES", taxa_level, "counts.diversity.tsv", sep=".")
+outfile <- paste(output_dir, output_file, sep="/")
+write.table(x, file=outfile, quote=FALSE, row.names=FALSE, col.names=TRUE, sep="\t")
