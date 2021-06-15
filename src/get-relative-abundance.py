@@ -12,7 +12,7 @@ from time import asctime as at
 p = ap.ArgumentParser()
 p.add_argument("--input-dir", help="Input directory containing bracken report files (use only if not using --input-files)")
 p.add_argument("--extension", help="Extension of bracken report files contained in --input-dir (default: \"report\")", type=str, default="report")
-p.add_argument("--input-files", help="Input files to be combined (use only if not using --input-dir and --extension)")
+p.add_argument("--input-files", help="Input files to be combined (use only if not using --input-dir and --extension)", nargs="+")
 p.add_argument("--classif-level", help="Either one of S, G, F, C, O, P, D", default="S", type=str)
 p.add_argument("--max-species", help="Maximum number of species to include in final table, determined by highest average frequency", type=int, default=10)
 p.add_argument("--output-dir", help="Directory where to put output files", default=".")

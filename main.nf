@@ -55,6 +55,7 @@ process kraken2 {
   output:
     path "${sample_id}" into Kraken2_out
     tuple val(sample_id), file("${sample_id}/${sample_id}.report") into Counts
+    tuple val(sample_id), file("${sample_id}/${sample_id}.kraken.log") into Kraken_logs
 
   script:
     """
@@ -74,6 +75,53 @@ process kraken2 {
     """
 }
 
+// count classified
+
+process count_classified {
+
+  cpus = 1
+  executor = "local"
+
+  input:
+    tuple val(sample_id), file(kraken_log) from Kraken_logs
+
+  output:
+    file "${sample_id}.classif_reads.tsv" into Classif_reads
+
+  script:
+    """
+    CL=\$(cat ${kraken_log} | tr -s " " | grep "sequences classified" | cut -d " " -f 2) &&
+    CL_FRAC=\$(cat ${kraken_log} | tr -s " " | grep "sequences classified" | cut -d " " -f 5 | tr -d "()%") &&
+    UNCL=\$(cat ${kraken_log} | tr -s " " | grep "sequences unclassified" | cut -d " " -f 2) &&
+    UNCL_FRAC=\$(cat ${kraken_log} | tr -s " " | grep "sequences unclassified" | cut -d " " -f 5 | tr -d "()%") &&
+    echo -e "${sample_id}\t\${CL}\t\${CL_FRAC}\t\${UNCL}\t\${UNCL_FRAC}" \
+    > ${sample_id}.classif_reads.tsv
+
+    """
+}
+
+// create classified file
+
+process create_classified_table {
+
+  cpus = 1
+  executor = "local"
+  publishDir "${params.output_dir}/taxonomy", mode: "copy"
+
+  input:
+    file classif_tables from Classif_reads.collect()
+
+  output:
+    file "classified_reads.tsv" into classified_reads
+
+  script:
+    """
+    { echo -e 'Sample\tC\tC_frac\tU\tU_frac' &&
+    cat ${classif_tables}; } > classified_reads.tsv
+    """
+}
+
+
 // bracken
 
 process bracken {
@@ -87,13 +135,13 @@ process bracken {
 
   output:
     path "${sample_id}" into Bracken_out
-    tuple val("S"), path("${sample_id}/S") into Bracken_S
-    tuple val("G"), path("${sample_id}/G") into Bracken_G
-    tuple val("F"), path("${sample_id}/F") into Bracken_F
-    tuple val("C"), path("${sample_id}/C") into Bracken_C
-    tuple val("O"), path("${sample_id}/O") into Bracken_O
-    tuple val("P"), path("${sample_id}/P") into Bracken_P
-    tuple val("D"), path("${sample_id}/D") into Bracken_D
+    tuple val("S"), file("${sample_id}/S/${sample_id}.S.bracken.report") into Bracken_S
+    tuple val("G"), file("${sample_id}/G/${sample_id}.G.bracken.report") into Bracken_G
+    tuple val("F"), file("${sample_id}/F/${sample_id}.F.bracken.report") into Bracken_F
+    tuple val("C"), file("${sample_id}/C/${sample_id}.C.bracken.report") into Bracken_C
+    tuple val("O"), file("${sample_id}/O/${sample_id}.O.bracken.report") into Bracken_O
+    tuple val("P"), file("${sample_id}/P/${sample_id}.P.bracken.report") into Bracken_P
+    tuple val("D"), file("${sample_id}/D/${sample_id}.D.bracken.report") into Bracken_D
 
   script:
     """
@@ -122,6 +170,8 @@ process bracken {
 
 Bracken_S
   .mix(Bracken_G, Bracken_F, Bracken_C, Bracken_O, Bracken_P, Bracken_D)
+  .groupTuple()
+  .map{ it -> [ it[0], it[1].collect() ] }
   .set{ Bracken_reports }
 
 
@@ -134,7 +184,8 @@ process plot_relative_abundance {
   publishDir "${params.output_dir}/taxonomy/rel_abundance", mode: "copy"
 
   input:
-    tuple val(level), path(level_reports) from Bracken_reports
+    tuple val(level), file(reports) from Bracken_reports
+    file classified_reads
 
   output:
     file "RES.${level}.rel_abundance.tsv" into bracken_frac
@@ -147,13 +198,14 @@ process plot_relative_abundance {
     """
     ${PYTHON3} \
     ${params.source_dir}/get-relative-abundance.py \
-    --input-dir ${level_reports} \
+    --input-files ${reports} \
     --extension report \
     --classif-level ${level} \
     --output-dir . &&
     ${RSCRIPT} \
     ${params.source_dir}/plot-relative-abundance.Rscript \
     RES.${level}.rel_abundance.top_${params.max_species}.tsv \
+    ${classified_reads} \
     ${level} \
 
     """

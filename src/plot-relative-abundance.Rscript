@@ -7,12 +7,17 @@ library(reshape2)
 # arguments
 args <- commandArgs(trailingOnly=T)
 infile <- args[1]
-level <- args[2]
+classified_reads_file <- args[2]
+level <- args[3]
 
 # read input file
 x <- read.table(infile, header=T, sep="\t")
 x <- melt(x, id_vars=c("Taxa"))
 colnames(x) <- c("Taxa", "Sample", "Relative_abundance")
+
+# read classified reads
+y <- read.table(classified_reads_file, header=T, sep="\t")
+colnames(y) <- c("Sample", "Classif", "Classif_frac", "Unclassif", "Unclassif_frac")
 
 # create color vector
 myColors <- c('#D7949D', '#e7d4e8', '#1b7837', '#d9f0d3', '#7fbf7b', '#762a83', '#d73027',
@@ -30,12 +35,12 @@ newLevels <- append(newLevels, c("Other"))
 x$Taxa <- factor(x$Taxa, levels=newLevels)
 
 # define plot dimensions
-plotHeight <- 1400
-plotWidth <- 400 + 200 * length(levels(x$Taxa))
-plotRes <- 350
+plotHeight <- 800 + 50 * length(levels(x$Taxa))
+plotWidth <- 200 + 300 * length(levels(x$Sample))
+plotRes <- 300
 
-# plot - facet timepoint
-P1 <- ggplot(data=x, mapping=aes(x=Sample, y=Relative_abundance, fill=Taxa)) +
+# plot
+P1 <- ggplot() +
 theme(plot.title=element_text(family="sans", face="bold",
 					colour='#261A1A', size=11),
 	axis.title.x=element_text(family="sans", face="bold",
@@ -47,11 +52,14 @@ theme(plot.title=element_text(family="sans", face="bold",
 	legend.text=element_text(family="sans", face="italic", colour='#000000', size=8),
 	legend.title=element_text(family="sans", face="bold", colour='#000000', size=9),
 	panel.background=element_rect(fill='white', colour='white'),
-	aspect.ratio=0.40) +
-geom_bar(position="fill", stat="identity") +
+	aspect.ratio=0.4) +
+geom_bar(data=x, mapping=aes(x=Sample, y=Relative_abundance, fill=Taxa),
+				position="fill", stat="identity", width=0.9) +
 ggtitle("") +
 xlab("Sample") + ylab("Relative abundance") +
-scale_fill_manual(name=level, values=myColors)
+scale_fill_manual(name="", values=myColors) +
+geom_text(data=y, mapping=aes(x=Sample, y=1, label=Classif_frac), size=2.5, vjust=-0.25) +
+scale_y_continuous(expand = expansion(mult = c(0.05, 0.1)))
 
 png(paste(infile, "png", sep="."), height=plotHeight, width=plotWidth, res=plotRes)
 P1
