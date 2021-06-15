@@ -1,6 +1,6 @@
 # Pipeline for the taxonomy analysis of a set of metagenomic reads
 
-This pipeline takes as input a set of one or more read files (single-end illumina, pacbio) and performs a series of analysis with them, aimed at characterizing the taxa contained in the read set. The illumina reads can for now only be **single-end** due to how the code is implemented, but it will be adjusted in the future. For now, treat the two read files as independent. The pipeline assigns the reads to taxa using [Kraken2](https://github.com/DerrickWood/kraken2/wiki/Manual), and then refines read counts statistically using [Bracken](https://github.com/jenniferlu717/BrackenA). The refined counts are used to estimate richness, diversity and relative abundance using custom **python3** and **Rscript** scripts, which can be found inside the `/src` directory and are executed by the pipeline automatically.
+This pipeline takes as input a set of one or more read files (single-end illumina, pacbio) and performs a series of analysis with them, aimed at characterizing the taxa contained in the read set. The tools used are *alignment free*, hence to use paired end reads just pass them as independent files. The pipeline assigns the reads to taxa using [Kraken2](https://github.com/DerrickWood/kraken2/wiki/Manual), and then refines read counts statistically using [Bracken](https://github.com/jenniferlu717/BrackenA). The refined counts are used to estimate richness, diversity and relative abundance using custom **python3** and **Rscript** scripts, which can be found inside the `/src` directory and are executed by the pipeline automatically.
 
 ### Cleaning the reads
 
@@ -73,17 +73,18 @@ This pipeline depends on the following programs in the `$PATH`. You can also not
 
 ##### Run
 
+To see the pipeline help section, run:
+
+```
+nextflow run main.nf --help
+```
+
 Then, run the pipeline with a command like this one, which will also generate a report, a timeline and a direct acyclic graph for the proceeding of the pipeline itself:
 
 ```
 nextflow \
 run \
 main.nf \
--resume \
--work-dir /path/to/work \
--with-report /path/to/cmd.sbatch.report.html \
--with-timeline /path/to/cmd.sbatch.timeline.html \
--with-dag /path/to/cmd.sbatch.dag.png \
 --output_dir /path/to/output \
 --threads 48 \
 --ccs_dir /path/to/reads \
@@ -91,10 +92,13 @@ main.nf \
 --kraken_db /path/to/kraken_database \
 --kraken_db_read_len 100 \
 --min_confidence 0.25 \
---min_hit_groups 2 \
---min_counts 10 \
---max_species 10 \
 ```
+
+##### Nextflow tips
+
+- You can resume a crashed run by re-running the same command and adding `-resume` as an option after `run`. More info [here](https://www.nextflow.io/docs/latest/getstarted.html).
+- You can specify where to save the temporary files of the pipeline by specifying a `-work-dir` directory right after `run`. More info on that and on other options available in `nextflow run` can be found [here](https://www.nextflow.io/docs/latest/cli.html#clean).
+- The `work` directory tends to become quite crowded and full thousands of internal nextflow files, so every now and then make sure you clean it with `nextflow clean`. More info [here](https://www.nextflow.io/docs/latest/cli.html#clean)
 
 ### Output
 
