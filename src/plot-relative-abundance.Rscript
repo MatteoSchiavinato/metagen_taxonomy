@@ -18,6 +18,8 @@ colnames(x) <- c("Taxa", "Sample", "Relative_abundance")
 # read classified reads
 y <- read.table(classified_reads_file, header=T, sep="\t")
 colnames(y) <- c("Sample", "Classif", "Classif_frac", "Unclassif", "Unclassif_frac")
+y$Classif_frac <- paste(y$Classif_frac, "%", sep=" ")
+y$Unclassif_frac <- paste(y$Unclassif_frac, "%", sep=" ")
 
 # create color vector
 myColors <- c('#D7949D', '#e7d4e8', '#1b7837', '#d9f0d3', '#7fbf7b', '#762a83', '#d73027',
