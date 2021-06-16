@@ -64,6 +64,7 @@ This pipeline depends on the following programs in the `$PATH`. You can also not
 
 | Program  | Version | Type          | Link                                                            |
 |----------|---------|---------------|-----------------------------------------------------------------|
+| Nextflow | 21.04.1 | Interpreter   | https://www.nextflow.io/                                        |
 | Kraken2  | 2.1.1   | Program       | https://github.com/DerrickWood/kraken2/wiki/Manual              |
 | Bracken  | 2.6.2   | Program       | https://ccb.jhu.edu/software/bracken/                           |
 | Python   | 3.6.*   | Interpreter   | https://www.python.org/downloads/                               |
