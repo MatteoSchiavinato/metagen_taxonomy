@@ -1,32 +1,34 @@
 #!/usr/bin/env sh
 
-PROJECT="M00001_PacBio_chicken_gut_metagenomics"
+PROJECT="M00003_Toasted_soy_diversity"
 WD="/gpfs/data/fs71579/schmat90/CF/projects/meta/${PROJECT}"
 
 echo """\
 #!/usr/bin/env sh
 #SBATCH -N 1
-#SBATCH -J mp-TAXA
+#SBATCH -J TaxaDiv
 #SBATCH --mail-type FAIL,END
 #SBATCH --mail-user matteo.schiavinato@boku.ac.at
 #SBATCH --account p71579
 #SBATCH --qos mem_0384
 #SBATCH --partition mem_0384
 
-cd ${WD}/scripts/wf-taxa
+cd ${WD}/scripts
 
 nextflow \
 run \
 main.nf \
 -resume \
--work-dir ${WD}/scripts/wf-taxa/work \
--with-report ${WD}/scripts/wf-taxa/cmd.sbatch.report.html \
--with-timeline ${WD}/scripts/wf-taxa/cmd.sbatch.timeline.html \
--with-dag ${WD}/scripts/wf-taxa/cmd.sbatch.dag.png \
+-work-dir ${WD}/scripts/work \
+-with-report ${WD}/scripts/cmd.sbatch.report.html \
+-with-timeline ${WD}/scripts/cmd.sbatch.timeline.html \
+-with-dag ${WD}/scripts/cmd.sbatch.dag.png \
 --output_dir ${WD} \
 --threads 48 \
---ccs_dir ${WD}/filt_reads \
---extension no_host.no_human.fasta \
+--fastq_dir ${WD}/raw_data/FINAL_trimmed_reads \
+--host_genome ${WD}/raw_data/genomes/Gallus_gallus.GRCg6a.dna.toplevel.fa \
+--human_genome ${WD}/raw_data/genomes/hg38.fa \
+--feed_genome ${WD}/raw_data/genomes/GCF_902167145.1.fa \
 --kraken_db /gpfs/data/fs71579/schmat90/chicken/kraken2/KRAKEN_DB \
 --kraken_db_read_len 100 \
 --min_confidence 0.25 \

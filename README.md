@@ -1,14 +1,12 @@
 # Pipeline for the taxonomy analysis of a set of metagenomic reads
 
-This pipeline takes as input a set of one or more read files (single-end illumina, pacbio) and performs a series of analysis with them, aimed at characterizing the taxa contained in the read set. The tools used are *alignment free*, hence to use paired end reads just pass them as independent files. The pipeline assigns the reads to taxa using [Kraken2](https://github.com/DerrickWood/kraken2/wiki/Manual), and then refines read counts statistically using [Bracken](https://github.com/jenniferlu717/BrackenA). The refined counts are used to estimate richness, diversity and relative abundance using custom **python3** and **Rscript** scripts, which can be found inside the `/src` directory and are executed by the pipeline automatically.
+This pipeline takes as input a set of one or more read files (single-end illumina, pacbio) and performs a series of analysis with them, aimed at characterizing the taxa contained in the read set. The taxonomic classification tools used are *alignment free*, hence to use paired end reads just pass them as independent files.
 
-### Cleaning the reads
+Short reads are usually quality-trimmed removing adapter content and low-quality reads. The process (trimming) is usually done with tools like [Trimmomatic](http://www.usadellab.org/cms/uploads/supplementary/Trimmomatic/TrimmomaticManual_V0.32.pdf) or [Trim galore](https://www.bioinformatics.babraham.ac.uk/projects/trim_galore/). Make sure you trim your reads with these tools before you use this pipeline.
 
-The pipeline assumes that the reads you use do not need any taxonomic cleaning or quality trimming. If you need to do so, take care to do it yourself.
+Metagenomic reads are usually cleaned removing any read mapping against the host genome (e.g. *Gallus gallus*), against the human genome (*Homo sapiens*), and against the main source of food of the host (e.g. *Zea mays*). The pipeline first maps the reads against a concatenated version of these genomes, and the unmapped reads are extracted with `samtools view -b -h -f 0x4`. The `-f 0x4` flag indicates to samtools that it has to retain only reads that did **not** map against the reference. The resulting **bam** file is then passed to `samtools fasta` to obtain a fasta file. The fasta files obtained from this filtering step are those that are then passed to the taxonomic classification part of the pipeline.
 
-Metagenomic reads are usually cleaned removing any read mapping against the host genome (e.g. *Gallus gallus*) and against the human genome. Reads are mapped against a concatenated version of these two genomes, and the unmapped reads are extracted with `samtools view -b -h -f 0x4`. The `-f 0x4` flag indicates to samtools that it has to retain only reads that did **not** map against the reference. The resulting **bam** file can then be passed to `samtools fasta` to obtain a fasta file (or any other tool that converts from bam to fasta, there are many).
-
-Short reads are usually quality-trimmed removing adapter content and low-quality reads. The process (trimming) is usually done with tools like [Trimmomatic](http://www.usadellab.org/cms/uploads/supplementary/Trimmomatic/TrimmomaticManual_V0.32.pdf) or [Trim galore](https://www.bioinformatics.babraham.ac.uk/projects/trim_galore/). Make sure you trim your reads with these tools.
+The pipeline assigns the reads to taxa using [Kraken2](https://github.com/DerrickWood/kraken2/wiki/Manual), and then refines read counts statistically using [Bracken](https://github.com/jenniferlu717/BrackenA). The refined counts are used to estimate richness, diversity and relative abundance using custom **python3** and **Rscript** scripts, which can be found inside the `/src` directory and are executed by the pipeline automatically.
 
 ### Preparing the database for Kraken2
 
@@ -62,20 +60,24 @@ The pipeline can be run using the `run.sh` script contained in the repository, j
 
 This pipeline depends on the following programs in the `$PATH`. You can also not put them in the `$PATH` but in that case you have to explicitly declare their path in the `nextflow.config` file.
 
-| Program  | Version | Type          | Link                                                            |
-|----------|---------|---------------|-----------------------------------------------------------------|
-| Nextflow | 21.04.1 | Interpreter   | https://www.nextflow.io/                                        |
-| Kraken2  | 2.1.1   | Program       | https://github.com/DerrickWood/kraken2/wiki/Manual              |
-| Bracken  | 2.6.2   | Program       | https://ccb.jhu.edu/software/bracken/                           |
-| Python   | 3.6.*   | Interpreter   | https://www.python.org/downloads/                               |
-| Pandas   | 1.0.*   | Python module | https://pandas.pydata.org/                                      |
-| Rscript  | 3.5.*   | Interpreter   | https://cran.r-project.org/                                     |
-| dplyr    | 1.0.6   | R package     | https://dplyr.tidyverse.org/                                    |
-| ggplot2  | 3.3.3   | R package     | https://ggplot2.tidyverse.org/reference/                        |
-| ggpubr   | 0.4.0   | R package     | https://rpkgs.datanovia.com/ggpubr/                             |
-| reshape2 | 1.4.4   | R package     | https://www.rdocumentation.org/packages/reshape2/versions/1.4.4 |
-| rstatix  | 0.7.0   | R package     | https://cran.r-project.org/web/packages/rstatix/index.html      |
-| vegan    | 2.5.*   | R package     | https://cran.r-project.org/web/packages/vegan/vegan.pdf         |
+| Program  | Version | Type          | Link                                                               |
+|----------|---------|---------------|--------------------------------------------------------------------|
+| Nextflow | 21.04.1 | Interpreter   | https://www.nextflow.io/                                           |
+| Seqtk    | 1.3     | Program       | https://anaconda.org/bioconda/seqtk                                |
+| Minimap2 | 2.18    | Program       | https://github.com/lh3/minimap2                                    |
+| Hisat2   | 2.1.1   | Program       | http://daehwankimlab.github.io/hisat2/download/#version-hisat2-221 |
+| Samtools | 1.12    | Program       | http://www.htslib.org/download/                                    |  
+| Kraken2  | 2.1.1   | Program       | https://github.com/DerrickWood/kraken2/wiki/Manual                 |
+| Bracken  | 2.6.2   | Program       | https://ccb.jhu.edu/software/bracken/                              |
+| Python   | 3.6.*   | Interpreter   | https://www.python.org/downloads/                                  |
+| Pandas   | 1.0.*   | Python module | https://pandas.pydata.org/                                         |
+| Rscript  | 3.5.*   | Interpreter   | https://cran.r-project.org/                                        |
+| dplyr    | 1.0.6   | R package     | https://dplyr.tidyverse.org/                                       |
+| ggplot2  | 3.3.3   | R package     | https://ggplot2.tidyverse.org/reference/                           |
+| ggpubr   | 0.4.0   | R package     | https://rpkgs.datanovia.com/ggpubr/                                |
+| reshape2 | 1.4.4   | R package     | https://www.rdocumentation.org/packages/reshape2/versions/1.4.4    |
+| rstatix  | 0.7.0   | R package     | https://cran.r-project.org/web/packages/rstatix/index.html         |
+| vegan    | 2.5.*   | R package     | https://cran.r-project.org/web/packages/vegan/vegan.pdf            |
 
 
 ##### Run

@@ -15,8 +15,15 @@ if (params.help) {
 
   ### input ###
 
-  --ccs_dir               Directory containing FASTA files with ccs reads
-  --extension             Extension of the FASTA files (fa)
+  --ccs_dir               Directory containing FASTA files with pacbio ccs reads
+  --fastq_dir             Directory containing FASTQ files with short reads
+  --fasta_dir             Directory containing FASTA files with short reads
+
+  ### removal of unwanted reads ###
+
+  --host_genome           E.g. Gallus gallus (none)
+  --human_genome          E.g. Homo sapiens (none)
+  --feed_genome           E.g. Zea mays (none)
 
   ### diversity ###
 
@@ -45,10 +52,293 @@ if (params.help) {
 
 // -----------------------------------------------------------------------------
 
-Channel
-  .fromPath("${params.ccs_dir}/*.${params.extension}")
+// read fasta files from long pacbio reads
+if (params.ccs_dir) {
+
+  Channel
+  .fromPath("${params.ccs_dir}/*.{fa,fasta}")
   .map{ it -> [ it.simpleName, it] }
   .set{ Ccs }
+
+  // remove unwanted reads
+  // human
+
+  process remove_human_ccs {
+
+    executor = "local"
+    cpus = params.threads
+
+    input:
+      tuple val(sample_id), file(fasta) from Ccs
+
+    output:
+      tuple val(sample_id), file("${sample_id}.no-h.fasta") into Ccs_in_nohuman
+
+    script:
+      """
+      ${MINIMAP2} \
+      -H \
+      -a \
+      -t ${params.threads} \
+      ${params.human_genome} \
+      ${fasta} | \
+      ${SAMTOOLS} fasta \
+      -@ ${params.threads} \
+      -f 0x4 -F 0x0100 \
+      - \
+      > ${sample_id}.no-h.fasta \
+
+      """
+  }
+
+  // host
+
+  process remove_host_ccs {
+
+    executor = "local"
+    cpus = params.threads
+
+    input:
+      tuple val(sample_id), file(fasta) from Ccs_in_nohuman
+
+    output:
+      tuple val(sample_id), file("${sample_id}.no-hh.fasta") into Ccs_in_nohuman_nohost
+
+    script:
+      """
+      ${MINIMAP2} \
+      -H \
+      -a \
+      -t ${params.threads} \
+      ${params.host_genome} \
+      ${fasta} | \
+      ${SAMTOOLS} fasta \
+      -@ ${params.threads} \
+      -f 0x4 -F 0x0100 \
+      - \
+      > ${sample_id}.no-hh.fasta \
+
+      """
+  }
+
+  // feed
+
+  process remove_feed_ccs {
+
+    executor = "local"
+    cpus = params.threads
+
+    publishDir "${params.output_dir}/filt_reads", mode: "copy"
+
+    input:
+      tuple val(sample_id), file(fasta) from Ccs_in_nohuman_nohost
+
+    output:
+      tuple val(sample_id), file("${sample_id}.no-hhf.fasta") into Ccs_in_nohuman_nohost_nofeed
+
+    script:
+      """
+      ${MINIMAP2} \
+      -H \
+      -a \
+      -t ${params.threads} \
+      ${params.feed_genome} \
+      ${fasta} | \
+      ${SAMTOOLS} fasta \
+      -@ ${params.threads} \
+      -f 0x4 -F 0x0100 \
+      - \
+      > ${sample_id}.no-hhf.fasta \
+
+      """
+  }
+} else {
+  Ccs_in_nohuman_nohost_nofeed = Channel.empty()
+}
+
+
+// build hisat2 index if needed
+if (params.fastq_dir || params.fasta_dir) {
+
+  process build_hisat2_index {
+
+    executor = "local"
+    cpus = params.threads
+
+    output:
+      tuple val("human_genome"), path("human_genome*") into Human_genome_idx
+      tuple val("host_genome"), path("host_genome*") into Host_genome_idx
+      tuple val("feed_genome"), path("feed_genome*") into Feed_genome_idx
+
+    script:
+      """
+      ${HISAT2_BUILD} -p ${params.threads} ${params.human_genome} human_genome
+      ${HISAT2_BUILD} -p ${params.threads} ${params.host_genome} host_genome
+      ${HISAT2_BUILD} -p ${params.threads} ${params.feed_genome} feed_genome
+      """
+    }
+}
+
+// read fastq files from short reads
+if (params.fastq_dir) {
+
+  Channel
+    .fromPath("${params.fastq_dir}/*.{fq,fastq}")
+    .map{ it -> [ it.simpleName, it] }
+    .set{ Fastq }
+
+
+  // convert reads to fasta format
+
+  process convert_to_fasta {
+
+    executor = "local"
+    cpus = 1
+
+    input:
+      tuple val(sample_id), file(fastq) from Fastq
+
+    output:
+      tuple val(sample_id), file("${sample_id}.fa") into Fastq_to_fasta
+
+    script:
+      """
+      ${SEQTK} \
+      seq \
+      -A \
+      ${fastq} \
+      > ${sample_id}.fa \
+
+      """
+  }
+} else {
+  Fastq_to_fasta = Channel.empty()
+}
+
+
+// read fasta files from short reads
+if (params.fasta_dir) {
+
+  Channel
+  .fromPath("${params.fasta_dir}/*.{fa,fasta}")
+  .map{ it -> [ it.simpleName, it] }
+  .set{ Fasta }
+
+} else {
+  Fasta = Channel.empty()
+}
+
+
+if (params.fastq_dir || params.fasta_dir) {
+
+  // concatenate channels
+
+  Fastq_to_fasta
+  .concat(Fasta)
+  .set{ Fastq_and_fasta }
+
+  // remove unwanted reads
+  // human
+
+  process remove_human_reads {
+
+    executor = "local"
+    cpus = params.threads
+
+    input:
+      tuple val(sample_id), file(fasta) from Fastq_and_fasta
+      tuple val(index_prefix), path(index) from Human_genome_idx
+
+    output:
+      tuple val(sample_id), file("${sample_id}.no-h.fasta") into Fastq_and_fasta_in_nohuman
+
+    script:
+      """
+      ${HISAT2} \
+      -f \
+      -x ${index_prefix} \
+      -U ${fasta} \
+      -S ${sample_id}.no-h.sam &&
+      ${SAMTOOLS} fasta \
+      -@ ${params.threads} \
+      -f 0x4 -F 0x0100 \
+      ${sample_id}.no-h.sam \
+      > ${sample_id}.no-h.fasta \
+
+      """
+  }
+
+  // host
+
+  process remove_host_reads {
+
+    executor = "local"
+    cpus = params.threads
+
+    input:
+      tuple val(sample_id), file(fasta) from Fastq_and_fasta_in_nohuman
+      tuple val(index_prefix), path(index) from Host_genome_idx
+
+    output:
+      tuple val(sample_id), file("${sample_id}.no-hh.fasta") into Fastq_and_fasta_in_nohuman_nohost
+
+    script:
+      """
+      ${HISAT2} \
+      -f \
+      -x ${index_prefix} \
+      -U ${fasta} \
+      -S ${sample_id}.no-hh.sam &&
+      ${SAMTOOLS} fasta \
+      -@ ${params.threads} \
+      -f 0x4 -F 0x0100 \
+      ${sample_id}.no-hh.sam \
+      > ${sample_id}.no-hh.fasta \
+
+      """
+  }
+
+  // feed
+
+  process remove_feed_reads {
+
+    executor = "local"
+    cpus = params.threads
+
+    publishDir "${params.output_dir}/filt_reads", mode: "copy"
+
+    input:
+      tuple val(sample_id), file(fasta) from Fastq_and_fasta_in_nohuman_nohost
+      tuple val(index_prefix), path(index) from Feed_genome_idx
+
+    output:
+      tuple val(sample_id), file("${sample_id}.no-hhf.fasta") into Fastq_and_fasta_in_nohuman_nohost_nofeed
+
+    script:
+      """
+      ${HISAT2} \
+      -f \
+      -x ${index_prefix} \
+      -U ${fasta} \
+      -S ${sample_id}.no-hhf.sam &&
+      ${SAMTOOLS} fasta \
+      -@ ${params.threads} \
+      -f 0x4 -F 0x0100 \
+      ${sample_id}.no-hhf.sam \
+      > ${sample_id}.no-hhf.fasta \
+
+      """
+  }
+} else {
+  Fastq_and_fasta_in_nohuman_nohost_nofeed = Channel.empty()
+}
+
+
+// mix pacbio and illumina streams
+Ccs_in_nohuman_nohost_nofeed
+  .concat(Fastq_and_fasta_in_nohuman_nohost_nofeed)
+  .set{ Reads_in }
+
 
 
 // kraken2
@@ -60,7 +350,7 @@ process kraken2 {
   publishDir "${params.output_dir}/taxonomy/kraken2", mode: "copy"
 
   input:
-    tuple val(sample_id), file(fasta) from Ccs
+    tuple val(sample_id), file(fasta) from Reads_in
 
   output:
     path "${sample_id}" into Kraken2_out
