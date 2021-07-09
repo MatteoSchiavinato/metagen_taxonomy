@@ -459,7 +459,7 @@ process bracken {
       -r ${params.kraken_db_read_len} \
       -l \${LEVEL} \
       -t ${params.min_counts} || \
-      echo "This table wasn't generated because no reads were classified at this taxonomic level."; } \
+      touch ${sample_id}/\${LEVEL}/${sample_id}.\${LEVEL}.bracken.report; } \
       &> ${sample_id}/\${LEVEL}/${sample_id}.bracken.log
     done \
 
