@@ -450,7 +450,7 @@ process bracken {
     declare -a X=(S G F O C P D) &&
     for LEVEL in \${X[@]}
     do
-      if [ ! -d \${LEVEL} ]; then mkdir ${sample_id}/\${LEVEL}; fi &&
+      if [ ! -d ${sample_id}/\${LEVEL} ]; then mkdir ${sample_id}/\${LEVEL}; fi &&
       { ${BRACKEN} \
       -d ${params.kraken_db} \
       -i ${report} \
@@ -458,7 +458,8 @@ process bracken {
       -w ${sample_id}/\${LEVEL}/${sample_id}.\${LEVEL}.bracken.report \
       -r ${params.kraken_db_read_len} \
       -l \${LEVEL} \
-      -t ${params.min_counts}; } \
+      -t ${params.min_counts} || \
+      echo "This table wasn't generated because no reads were classified at this taxonomic level."; } \
       &> ${sample_id}/\${LEVEL}/${sample_id}.bracken.log
     done \
 
@@ -538,6 +539,3 @@ process diversity {
     """
 
 }
-
-
-// plot diversity
