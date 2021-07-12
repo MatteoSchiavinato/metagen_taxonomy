@@ -10,21 +10,13 @@ The pipeline assigns the reads to taxa using [Kraken2](https://github.com/Derric
 
 ### Preparing the database for Kraken2
 
-Kraken2 requires a database in order to classify the reads. This pipeline assumes you have it. One of the many available kraken2 databases is **maxikraken2**. This database contains ~140 GB of data from metagenomic species. The following commands must be executed in the directory where you want to create the database, in order to generate it:
+Kraken2 depends on a database that has to be pre-built. Depending on your needs, there are many databases that you can use. Here are the three main databases.
 
-```
-mkdir maxikraken2_1903_140GB
-cd maxikraken2_1903_140GB
-wget -c https://refdb.s3.climb.ac.uk/maxikraken2_1903_140GB/hash.k2d
-wget https://refdb.s3.climb.ac.uk/maxikraken2_1903_140GB/opts.k2d
-wget https://refdb.s3.climb.ac.uk/maxikraken2_1903_140GB/taxo.k2d
+##### Traditional database
 
-kraken2-inspect --db .
-```
+Kraken2 requires a database in order to classify the reads. This pipeline assumes you have it.
 
-The first commands create a folder and download the three components of the database inside. The inspect command from kraken2 instead checks if everything is in place. It can take up to 30 minutes, so run it when you can have a break. It outputs a list of species found and other details about the database which may be useful to your publications, so save its output to a file.
-
-Another way is to build the database yourself. Maxikraken often doesn't work at the bracken stage because they don't provide the `kmer_distrib` file that is needed for bracken to work. Hence, you can build your own database and then use it. To do so, you can use `kraken2-build` in the folder where to create the database, making sure that you download both the library and the taxonomy files.
+The classic usage requires you to build the database yourself. To do so, you can use `kraken2-build` in the folder where to create the database, making sure that you download both the library and the taxonomy files.
 
 ```
 kraken2-build \
@@ -50,6 +42,51 @@ bracken-build \
 The `-k` option defines the k-mer length and is usually at least 1/2 of the read length. The `-l` option defines the average read length of the reads you're planning to map. The `-d` option is the path to the database that you created with `kraken2-build` (`--db` flag). The `-x` option is the path to the directory containing the `kraken2` and the `kraken2-build` executables. The `-t` option defines threads.
 
 Once this command has finished, you have built the database properly and can use the pipeline.  
+
+##### 16S databases
+
+On of the most common usages of the kraken2+bracken pipeline is to detect enrichment of 16S ribosomal RNAs. For this purpose, one should not use a traditional database built from NCBI, but rather any of the three main 16S rRNA databases: [Silva](https://www.arb-silva.de/), [Greengenes](https://greengenes.secondgenome.com/), or [RDP](https://rdp.cme.msu.edu/).
+
+These three databases are provided inside the installation of kraken2. In the **kraken2** main directory there is a subdirectory called `scripts` which contains many useful scripts to build and prepare databases (and other things). Depending on which of the three databases you want to use, you can run any of the corresponding script (which are called, for example, `16S_silva_installation.sh`).
+
+These scripts, however, are not perfectly fit for running them from the shell "as is". In fact, they use two variables called `$KRAKEN2_DB_NAME` and `$KRAKEN2_THREAD_CT` which are not initialized in the script. These two probably come from the command line, from another calling script, but can be declared in the script too. Here's what I added to the script:
+
+```
+KRAKEN2_DB_NAME=$@
+KRAKEN2_THREAD_CT=16
+```
+
+This way, all you have to do is to pass a string as *first and only* argument of the script when you run it and that will be the directory containing your database at the end. The other variable simply sets the number of threads for the building process, so I set it to 16 but it can be any number that fits your hardware.
+
+This was the final command for the preparation of the **Silva** database:
+
+```
+sh 16S_silva_installation.sh 16S_db_silva
+cd 16S_db_silva
+bracken-build -k 35 -l 100 -t 16 -d .
+```
+
+This command runs the building script from the kraken2 suite. Then it goes into the created directory and it builds a bracken database on top of it. The `*.sh` script provided with kraken2 builts a kraken2 database with a kmer length of 35: hence, the bracken database has to be built with the same kmer length (`-k 35`). The read length depends on your dataset. A normal illumina dataset likely contains reads that are ~ 100 nt long, so `-l 100` was set. If your reads are of a different length, make sure to change this parameter. The threads are set with `-t 16`, and the database location is set with `-d`. Finally, `bracken-build` requires the kraken2 executables in the `$PATH`. If these are **not** in the path, then you can declare a parameter called `-x` which specifies the actual full path where these executables can be found (i.e. the base directory of the kraken2 program in your filesystem).
+
+If you prefer to use **GreenGenes** or **RDP**, simply do the same operations as I did here for **Silva** but on the other two scripts.
+
+##### MaxiKraken
+
+One of the many available kraken2 databases is **maxikraken2**. This database contains ~140 GB of data from metagenomic species. Be aware that Maxikraken often doesn't work at the bracken stage because they don't provide the `kmer_distrib` file that is needed for bracken to work. Hence, use maxikraken2 only if you're *not* planning to run bracken, or if you are willing to spend some time to build the bracken database yourself (it may take ages and not work swiftly, it's a buggy process).
+
+The following commands must be executed in the directory where you want to create the database, in order to generate it:
+
+```
+mkdir maxikraken2_1903_140GB
+cd maxikraken2_1903_140GB
+wget -c https://refdb.s3.climb.ac.uk/maxikraken2_1903_140GB/hash.k2d
+wget https://refdb.s3.climb.ac.uk/maxikraken2_1903_140GB/opts.k2d
+wget https://refdb.s3.climb.ac.uk/maxikraken2_1903_140GB/taxo.k2d
+
+kraken2-inspect --db .
+```
+
+The first commands create a folder and download the three components of the database inside. The inspect command from kraken2 instead checks if everything is in place. It can take up to 30 minutes, so run it when you can have a break. It outputs a list of species found and other details about the database which may be useful to your publications, so save its output to a file.
 
 
 ### Running the pipeline
