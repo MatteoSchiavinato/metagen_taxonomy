@@ -29,7 +29,7 @@ main.nf \
 --host_genome ${WD}/raw_data/genomes/Gallus_gallus.GRCg6a.dna.toplevel.fa \
 --human_genome ${WD}/raw_data/genomes/hg38.fa \
 --feed_genome ${WD}/raw_data/genomes/GCF_902167145.1.fa \
---kraken_db /gpfs/data/fs71579/schmat90/chicken/kraken2/KRAKEN_DB \
+--kraken_db /binfl/lv71579/schmat90/software/kraken2/2.1.1/scripts/16S_db_silva \
 --kraken_db_read_len 100 \
 --min_confidence 0.25 \
 --min_hit_groups 2 \
