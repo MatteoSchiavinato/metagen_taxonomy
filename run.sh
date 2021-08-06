@@ -15,6 +15,8 @@ echo """\
 
 cd ${WD}/scripts
 
+module load gcc 
+
 nextflow \
 run \
 main.nf \

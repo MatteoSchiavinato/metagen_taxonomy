@@ -43,10 +43,17 @@ df_count = pd.DataFrame()
 
 # iterate over all files
 sys.stderr.write("[{0}] Filling empty dataframes with actual data from input\n".format(at()))
+
 for FILENAME in Input_files:
 
 	# read dataframe
-	tmp = pd.read_csv(FILENAME, sep="\t", index_col=5, header=0)
+	# if the input file is empty, as sometimes happens with bracken
+	# creates an empty dataframe of the right structure
+	# which contains no information but can run through the script 
+	try:
+		tmp = pd.read_csv(FILENAME, sep="\t", index_col=5, header=None)
+	except:
+		tmp = pd.DataFrame(columns = [i for i in range(0,5)])
 
 	# extract sample name
 	sample = FILENAME.split("/")[-1].split(".")[0]
