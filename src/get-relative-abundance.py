@@ -49,7 +49,7 @@ for FILENAME in Input_files:
 	# read dataframe
 	# if the input file is empty, as sometimes happens with bracken
 	# creates an empty dataframe of the right structure
-	# which contains no information but can run through the script 
+	# which contains no information but can run through the script
 	try:
 		tmp = pd.read_csv(FILENAME, sep="\t", index_col=5, header=None)
 	except:
@@ -97,14 +97,17 @@ df_count = df_count.groupby(df_count.index).sum()
 
 # create subset table with top species
 Top_entries = df_frac.mean(axis=1).sort_values(ascending=False).head(args.max_species).index.to_list()
-Nontop_entries = [entry for entry in df_frac.index.to_list() if entry not in Top_entries]
-df_frac_nontop = df_frac.loc[Nontop_entries , :]
-df_top = df_frac.loc[Top_entries , :]
-df_nontop = df_frac_nontop.sum(axis=0)
 
-
-df_nontop = df_nontop.rename("Other")
-df_top = df_top.append(df_nontop)
+# if there are more species than the max number of species
+if len(Top_entries) >  args.max_species:
+	Nontop_entries = [entry for entry in df_frac.index.to_list() if entry not in Top_entries]
+	df_frac_nontop = df_frac.loc[Nontop_entries , :]
+	df_top = df_frac.loc[Top_entries , :]
+	df_nontop = df_frac_nontop.sum(axis=0)
+	df_nontop = df_nontop.rename("Other")
+	df_top = df_top.append(df_nontop)
+else:
+	df_top = df_frac.copy()
 
 # rescale values to 100% (to account for fluctuations)
 # kraken and bracken not always produce exact 100% totals

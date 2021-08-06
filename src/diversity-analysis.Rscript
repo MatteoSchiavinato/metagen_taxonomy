@@ -19,35 +19,66 @@ dissimilarity_method <- args[5]
 # read dataframe
 x <- read.table(infile, header=T, row.names=1, sep="\t")
 
-# ------------------------------------------------------------------------------
-# ALPHA DIVERSITY
+# if there are more than one taxon to compute these from
+# then compute them
+if (dim(x)[1]>1) {
 
-# calculate richness for each sample
-# MARGIN = 1 would compute the counts for each species (rows)
-# MARGIN = 2 computes the counts for each sample (columns)
-alpha_rich <- specnumber(x, MARGIN=2)
+  # ------------------------------------------------------------------------------
+  # ALPHA DIVERSITY
 
-# calculate evenness for every sample
-# same rules apply to the MARGIN parameter
-alpha_div <- diversity(x, index=evenness_method, MARGIN=2)
+  # calculate richness for each sample
+  # MARGIN = 1 would compute the counts for each species (rows)
+  # MARGIN = 2 computes the counts for each sample (columns)
+  alpha_rich <- specnumber(x, MARGIN=2)
+
+  # calculate evenness for every sample
+  # same rules apply to the MARGIN parameter
+  alpha_div <- diversity(x, index=evenness_method, MARGIN=2)
 
 
-# ------------------------------------------------------------------------------
-# BETA DIVERSITY
+  # ------------------------------------------------------------------------------
+  # BETA DIVERSITY
 
-# calculate bray-curtis dissimilarity
-# transposing the dataframe  first, to have samples on rows
-transposed_x <- t(x)
-beta_diss <- vegdist(transposed_x, method=dissimilarity_method, binary=TRUE, diag=TRUE, upper=TRUE)
+  # calculate bray-curtis dissimilarity
+  # transposing the dataframe  first, to have samples on rows
 
-# perform non-metric multi-dimensional scaling (NMDS) of the dissimilarity
-# using the same distance index used for the dissimilarity
-# in this case: "bray" (i.e. bray-curtis)
-beta_nmds <- metaMDS( beta_diss, distance = dissimilarity_method, plot = FALSE)
+  transposed_x <- t(x)
+  beta_diss <- vegdist(transposed_x, method=dissimilarity_method, binary=TRUE, diag=TRUE, upper=TRUE)
 
-# save points for plotting
-# points correspond to MDS1 and MDS2
-beta_nmds <- as.data.frame(beta_nmds$points)
+  # perform non-metric multi-dimensional scaling (NMDS) of the dissimilarity
+  # using the same distance index used for the dissimilarity
+  # in this case: "bray" (i.e. bray-curtis)
+  beta_nmds <- metaMDS(beta_diss, distance = dissimilarity_method, plot = FALSE)
+
+  # save points for plotting
+  # points correspond to MDS1 and MDS2
+  beta_nmds <- as.data.frame(beta_nmds$points)
+
+} else {
+
+  # if there is only one taxon (e.g. "Bacteria")
+  # then no dissimilarity can be computed
+  # hence, assign "0" for MDS1 and MDS2
+  # and remove row names
+  # this is needed for later merging of dataframes
+
+  # transpose
+  transposed_x <- t(x)
+  # alpha
+  alpha_rich <- cbind(row.names(transposed_x), 1)
+  row.names(alpha_rich) <- row.names(transposed_x)
+  alpha_rich <- alpha_rich[,c(2), drop=FALSE]
+  # beta
+  alpha_div <- cbind(row.names(transposed_x), 0)
+  row.names(alpha_div) <- row.names(transposed_x)
+  alpha_div <- alpha_div[,c(2), drop=FALSE]
+  # nmds
+  beta_nmds <- cbind(row.names(transposed_x), 0, 0)
+  row.names(beta_nmds) <- row.names(transposed_x)
+  beta_nmds <- beta_nmds[,c(2,3)]
+
+}
+
 
 # ------------------------------------------------------------------------------
 # TABLE
