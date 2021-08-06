@@ -37,6 +37,7 @@ if (params.help) {
 
   ### plotting ###
 
+  --skip_plotting         The workflow will not attempt plotting of any kind (off)
   --max_species           Max. number of species to include in the plot (10)
 
   ### output ###
@@ -478,7 +479,7 @@ Bracken_S
 
 // compute relative abundance
 
-process plot_relative_abundance {
+process get_relative_abundance {
 
   cpus = 1
   executor = "local"
@@ -486,14 +487,11 @@ process plot_relative_abundance {
 
   input:
     tuple val(level), file(reports) from Bracken_reports
-    file classified_reads
 
   output:
     file "RES.${level}.rel_abundance.tsv" into bracken_frac
     file "RES.${level}.rel_abundance.top_${params.max_species}.tsv" into bracken_top
     tuple val(level), file("RES.${level}.counts.tsv") into Bracken_counts
-    file "RES.${level}.rel_abundance.top_${params.max_species}.tsv.png" into bracken_top_png
-    file "RES.${level}.rel_abundance.top_${params.max_species}.tsv.svg" into bracken_top_svg
 
   script:
     """
@@ -502,14 +500,39 @@ process plot_relative_abundance {
     --input-files ${reports} \
     --extension report \
     --classif-level ${level} \
-    --output-dir . &&
-    ${RSCRIPT} \
-    ${params.source_dir}/plot-relative-abundance.Rscript \
-    RES.${level}.rel_abundance.top_${params.max_species}.tsv \
-    ${classified_reads} \
-    ${level} \
+    --output-dir . \
 
     """
+}
+
+
+// plot relative abundance
+if (params.skip_plotting == false) {
+
+  process plot_relative_abundance {
+
+    cpus = 1
+    executor = "local"
+    publishDir "${params.output_dir}/taxonomy/rel_abundance", mode: "copy"
+
+    input:
+      file bracken_top
+      file classified_reads
+
+    output:
+      file "RES.${level}.rel_abundance.top_${params.max_species}.tsv.png" into bracken_top_png
+      file "RES.${level}.rel_abundance.top_${params.max_species}.tsv.svg" into bracken_top_svg
+
+    script:
+      """
+      ${RSCRIPT} \
+      ${params.source_dir}/plot-relative-abundance.Rscript \
+      RES.${level}.rel_abundance.top_${params.max_species}.tsv \
+      ${classified_reads} \
+      ${level} \
+
+      """
+  }
 }
 
 // compute diversity metrics
