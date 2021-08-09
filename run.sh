@@ -39,7 +39,7 @@ main.nf \
 --max_species 10 \
 --evenness shannon \
 --dissimilarity bray \
---skip_plotting \
+--genus_only \
 
 """ \
 > cmd.sbatch

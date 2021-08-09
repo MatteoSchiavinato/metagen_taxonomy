@@ -19,6 +19,21 @@ dissimilarity_method <- args[5]
 # read dataframe
 x <- read.table(infile, header=T, row.names=1, sep="\t")
 
+# detect potential rows with only zero counts values
+# these make beta diversity calculations impossible
+# isolate them for later
+all_zero_samples <- as.character(colnames(x[ , colSums(x) == 0]))
+all_zero_df <- as.data.frame(matrix(nrow=length(all_zero_samples), ncol=5))
+colnames(all_zero_df) <- c("Sample", "Richness", "Evenness", "MDS1", "MDS2")
+all_zero_df$Sample <- all_zero_samples
+all_zero_df$Richness <- 0
+all_zero_df$Evenness <- NA
+all_zero_df$MDS1 <- NA
+all_zero_df$MDS2 <- NA
+
+# filter them out
+x <- x[ , colSums(x) > 0]
+
 # if there are more than one taxon to compute these from
 # then compute them
 if (dim(x)[1]>1) {
@@ -34,7 +49,6 @@ if (dim(x)[1]>1) {
   # calculate evenness for every sample
   # same rules apply to the MARGIN parameter
   alpha_div <- diversity(x, index=evenness_method, MARGIN=2)
-
 
   # ------------------------------------------------------------------------------
   # BETA DIVERSITY
@@ -83,10 +97,15 @@ if (dim(x)[1]>1) {
 # ------------------------------------------------------------------------------
 # TABLE
 
+# combine diversity values 
 x <- cbind(alpha_rich, alpha_div, beta_nmds)
 x <- cbind(row.names(x), x)
 row.names(x) <- NULL
 colnames(x) <- c("Sample", "Richness", "Evenness", "MDS1", "MDS2")
+# rejoin the computed values with those defaulted for samples with no counts
+# currently saved under "all_zero_df"
+x <- rbind(x, all_zero_df)
+# write to output
 output_file <- paste("RES", taxa_level, "counts.diversity.tsv", sep=".")
 outfile <- paste(output_dir, output_file, sep="/")
 write.table(x, file=outfile, quote=FALSE, row.names=FALSE, col.names=TRUE, sep="\t")

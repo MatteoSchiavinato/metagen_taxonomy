@@ -27,6 +27,10 @@ if (params.help) {
 
   ### diversity ###
 
+  --skip_diversity        Skip the diversity calculations and limit the analysis
+                          to the results produced by kraken2 + bracken (off)
+  --genus_only            Limit diversity analysis to genera only, which is what
+                          most people usually want, making the analysis faster (off)
   --evenness              One of: "shannon", "simpson", "invsimpson"
                           (shannon)
   --dissimilarity         One of: "bray", "jaccard", "manhattan", "euclidean",
@@ -34,10 +38,6 @@ if (params.help) {
                           "morisita", "horn", "mountford", "raup", "binomial",
                           "chao", "cao", "mahalanobis", "chisq", "chord"
                           (bray)
-
-  ### plotting ###
-
-  --skip_plotting         The workflow will not attempt plotting of any kind (off)
   --max_species           Max. number of species to include in the plot (10)
 
   ### output ###
@@ -425,32 +425,76 @@ process create_classified_table {
 
 // bracken
 
-process bracken {
+if (params.genus_only == false) {
 
-  cpus = params.threads
-  executor = "local"
-  publishDir "${params.output_dir}/taxonomy/bracken", mode: "copy"
+  process bracken_all {
 
-  input:
-    tuple val(sample_id), file(report) from Counts
+    cpus = params.threads
+    executor = "local"
+    publishDir "${params.output_dir}/taxonomy/bracken", mode: "copy"
 
-  output:
-    path "${sample_id}" into Bracken_out
-    tuple val("S"), file("${sample_id}/S/${sample_id}.S.bracken.report") into Bracken_S
-    tuple val("G"), file("${sample_id}/G/${sample_id}.G.bracken.report") into Bracken_G
-    tuple val("F"), file("${sample_id}/F/${sample_id}.F.bracken.report") into Bracken_F
-    tuple val("C"), file("${sample_id}/C/${sample_id}.C.bracken.report") into Bracken_C
-    tuple val("O"), file("${sample_id}/O/${sample_id}.O.bracken.report") into Bracken_O
-    tuple val("P"), file("${sample_id}/P/${sample_id}.P.bracken.report") into Bracken_P
-    tuple val("D"), file("${sample_id}/D/${sample_id}.D.bracken.report") into Bracken_D
+    input:
+      tuple val(sample_id), file(report) from Counts
 
-  script:
-    """
-    if [ ! -d ${sample_id} ]; then mkdir ${sample_id}; fi &&
-    unset X &&
-    declare -a X=(S G F O C P D) &&
-    for LEVEL in \${X[@]}
-    do
+    output:
+      path "${sample_id}" into Bracken_out
+      tuple val("S"), file("${sample_id}/S/${sample_id}.S.bracken.report") into Bracken_S
+      tuple val("G"), file("${sample_id}/G/${sample_id}.G.bracken.report") into Bracken_G
+      tuple val("F"), file("${sample_id}/F/${sample_id}.F.bracken.report") into Bracken_F
+      tuple val("C"), file("${sample_id}/C/${sample_id}.C.bracken.report") into Bracken_C
+      tuple val("O"), file("${sample_id}/O/${sample_id}.O.bracken.report") into Bracken_O
+      tuple val("P"), file("${sample_id}/P/${sample_id}.P.bracken.report") into Bracken_P
+      tuple val("D"), file("${sample_id}/D/${sample_id}.D.bracken.report") into Bracken_D
+
+    script:
+      """
+      if [ ! -d ${sample_id} ]; then mkdir ${sample_id}; fi &&
+      unset X &&
+      declare -a X=(S G F O C P D) &&
+      for LEVEL in \${X[@]}
+      do
+        if [ ! -d ${sample_id}/\${LEVEL} ]; then mkdir ${sample_id}/\${LEVEL}; fi &&
+        { ${BRACKEN} \
+        -d ${params.kraken_db} \
+        -i ${report} \
+        -o ${sample_id}/\${LEVEL}/${sample_id}.\${LEVEL}.bracken \
+        -w ${sample_id}/\${LEVEL}/${sample_id}.\${LEVEL}.bracken.report \
+        -r ${params.kraken_db_read_len} \
+        -l \${LEVEL} \
+        -t ${params.min_counts} || \
+        touch ${sample_id}/\${LEVEL}/${sample_id}.\${LEVEL}.bracken.report; } \
+        &> ${sample_id}/\${LEVEL}/${sample_id}.bracken.log
+      done \
+
+      """
+  }
+
+  // combine channels
+  Bracken_S
+    .mix(Bracken_G, Bracken_F, Bracken_C, Bracken_O, Bracken_P, Bracken_D)
+    .groupTuple()
+    .map{ it -> [ it[0], it[1].collect() ] }
+    .set{ Bracken_reports }
+
+} else {
+
+  process bracken_genus {
+
+    cpus = params.threads
+    executor = "local"
+    publishDir "${params.output_dir}/taxonomy/bracken", mode: "copy"
+
+    input:
+      tuple val(sample_id), file(report) from Counts
+
+    output:
+      path "${sample_id}" into Bracken_out
+      tuple val("G"), file("${sample_id}/G/${sample_id}.G.bracken.report") into Bracken_reports
+
+    script:
+      """
+      if [ ! -d ${sample_id} ]; then mkdir ${sample_id}; fi &&
+      LEVEL="G" &&
       if [ ! -d ${sample_id}/\${LEVEL} ]; then mkdir ${sample_id}/\${LEVEL}; fi &&
       { ${BRACKEN} \
       -d ${params.kraken_db} \
@@ -461,104 +505,67 @@ process bracken {
       -l \${LEVEL} \
       -t ${params.min_counts} || \
       touch ${sample_id}/\${LEVEL}/${sample_id}.\${LEVEL}.bracken.report; } \
-      &> ${sample_id}/\${LEVEL}/${sample_id}.bracken.log
-    done \
+      &> ${sample_id}/\${LEVEL}/${sample_id}.bracken.log \
 
-    """
+      """
+  }
 }
 
 
-// combine channels
+if (params.skip_diversity == false) {
 
-Bracken_S
-  .mix(Bracken_G, Bracken_F, Bracken_C, Bracken_O, Bracken_P, Bracken_D)
-  .groupTuple()
-  .map{ it -> [ it[0], it[1].collect() ] }
-  .set{ Bracken_reports }
+  // compute relative abundance
 
-
-// compute relative abundance
-
-process get_relative_abundance {
-
-  cpus = 1
-  executor = "local"
-  publishDir "${params.output_dir}/taxonomy/rel_abundance", mode: "copy"
-
-  input:
-    tuple val(level), file(reports) from Bracken_reports
-
-  output:
-    file "RES.${level}.rel_abundance.tsv" into bracken_frac
-    file "RES.${level}.rel_abundance.top_${params.max_species}.tsv" into bracken_top
-    tuple val(level), file("RES.${level}.counts.tsv") into Bracken_counts
-
-  script:
-    """
-    ${PYTHON3} \
-    ${params.source_dir}/get-relative-abundance.py \
-    --input-files ${reports} \
-    --extension report \
-    --classif-level ${level} \
-    --output-dir . \
-
-    """
-}
-
-
-// plot relative abundance
-if (params.skip_plotting == false) {
-
-  process plot_relative_abundance {
+  process get_relative_abundance {
 
     cpus = 1
     executor = "local"
     publishDir "${params.output_dir}/taxonomy/rel_abundance", mode: "copy"
 
     input:
-      file bracken_top
-      file classified_reads
+      tuple val(level), file(reports) from Bracken_reports
 
     output:
-      file "RES.${level}.rel_abundance.top_${params.max_species}.tsv.png" into bracken_top_png
-      file "RES.${level}.rel_abundance.top_${params.max_species}.tsv.svg" into bracken_top_svg
+      file "RES.${level}.rel_abundance.tsv" into bracken_frac
+      file "RES.${level}.rel_abundance.top_${params.max_species}.tsv" into bracken_top
+      tuple val(level), file("RES.${level}.counts.tsv") into Bracken_counts
+
+    script:
+      """
+      ${PYTHON3} \
+      ${params.source_dir}/get-relative-abundance.py \
+      --input-files ${reports} \
+      --extension report \
+      --classif-level ${level} \
+      --output-dir . \
+
+      """
+  }
+
+  // compute diversity metrics
+
+  process diversity {
+
+    cpus = 1
+    executor = "local"
+    publishDir "${params.output_dir}/taxonomy/diversity", mode: "copy"
+
+    input:
+      tuple val(level), file(counts) from Bracken_counts
+
+    output:
+      file "RES.${level}.counts.diversity.tsv" into Diversity
 
     script:
       """
       ${RSCRIPT} \
-      ${params.source_dir}/plot-relative-abundance.Rscript \
-      RES.${level}.rel_abundance.top_${params.max_species}.tsv \
-      ${classified_reads} \
+      ${params.source_dir}/diversity-analysis.Rscript \
+      ${counts} \
+      . \
       ${level} \
+      ${params.evenness} \
+      ${params.dissimilarity} \
 
       """
   }
-}
-
-// compute diversity metrics
-
-process diversity {
-
-  cpus = 1
-  executor = "local"
-  publishDir "${params.output_dir}/taxonomy/diversity", mode: "copy"
-
-  input:
-    tuple val(level), file(counts) from Bracken_counts
-
-  output:
-    file "RES.${level}.counts.diversity.tsv" into Diversity
-
-  script:
-    """
-    ${RSCRIPT} \
-    ${params.source_dir}/diversity-analysis.Rscript \
-    ${counts} \
-    . \
-    ${level} \
-    ${params.evenness} \
-    ${params.dissimilarity} \
-
-    """
-
 }
