@@ -25,18 +25,24 @@ x <- read.table(infile, header=T, row.names=1, sep="\t")
 all_zero_samples <- as.character(colnames(x[ , colSums(x) == 0]))
 all_zero_df <- as.data.frame(matrix(nrow=length(all_zero_samples), ncol=5))
 colnames(all_zero_df) <- c("Sample", "Richness", "Evenness", "MDS1", "MDS2")
-all_zero_df$Sample <- all_zero_samples
-all_zero_df$Richness <- 0
-all_zero_df$Evenness <- NA
-all_zero_df$MDS1 <- NA
-all_zero_df$MDS2 <- NA
 
-# filter them out
-x <- x[ , colSums(x) > 0]
+if (length(all_zero_samples) > 0) {
+  # store information on samples that have only zero counts
+  # i.e. those samples where nothing was found
+  all_zero_df$Sample <- all_zero_samples
+  all_zero_df$Richness <- 0
+  all_zero_df$Evenness <- NA
+  all_zero_df$MDS1 <- NA
+  all_zero_df$MDS2 <- NA
+}
+
 
 # if there are more than one taxon to compute these from
 # then compute them
 if (dim(x)[1]>1) {
+
+  # filter zerocounts out
+  x <- x[ , colSums(x) > 0]
 
   # ------------------------------------------------------------------------------
   # ALPHA DIVERSITY
@@ -68,7 +74,10 @@ if (dim(x)[1]>1) {
   # points correspond to MDS1 and MDS2
   beta_nmds <- as.data.frame(beta_nmds$points)
 
-} else {
+} else if (dim(x)[1] == 1) {
+
+  # filter zerocounts out
+  x <- x[ , colSums(x) > 0]
 
   # if there is only one taxon (e.g. "Bacteria")
   # then no dissimilarity can be computed
@@ -91,20 +100,49 @@ if (dim(x)[1]>1) {
   row.names(beta_nmds) <- row.names(transposed_x)
   beta_nmds <- beta_nmds[,c(2,3)]
 
+} else {
+
+  # if there is no taxon
+  # which is a likely outcome of running bracken at the species level
+  # and having a minimum counts threshold
+  # this could filter out all the classifications at the species level
+  # because they are unreliable
+
+  nocounts_df <- as.data.frame(matrix(nrow=length(colnames(x)), ncol=5))
+  colnames(nocounts_df) <- c("Sample", "Richness", "Evenness", "MDS1", "MDS2")
+  nocounts_df$Sample <- colnames(x)
+  nocounts_df$Richness <- 0
+  nocounts_df$Evenness <- NA
+  nocounts_df$MDS1 <- NA
+  nocounts_df$MDS2 <- NA
+
 }
 
 
 # ------------------------------------------------------------------------------
 # TABLE
 
-# combine diversity values 
-x <- cbind(alpha_rich, alpha_div, beta_nmds)
-x <- cbind(row.names(x), x)
-row.names(x) <- NULL
-colnames(x) <- c("Sample", "Richness", "Evenness", "MDS1", "MDS2")
-# rejoin the computed values with those defaulted for samples with no counts
-# currently saved under "all_zero_df"
-x <- rbind(x, all_zero_df)
+# combine diversity values
+if (dim(x)[1]>=1) {
+
+  x <- cbind(alpha_rich, alpha_div, beta_nmds)
+  x <- cbind(row.names(x), x)
+  row.names(x) <- NULL
+  colnames(x) <- c("Sample", "Richness", "Evenness", "MDS1", "MDS2")
+
+  # rejoin the computed values with those defaulted for samples with no counts
+  # currently saved under "all_zero_df"
+  # perform this action only if there are actually such samples
+  # if not, it would throw an error
+  if (length(all_zero_samples) > 0) {
+    x <- rbind(x, all_zero_df)
+  }
+} else {
+  # if there were no counts
+  # simply throw out the empty dataframe
+  x <- nocounts_df
+}
+
 # write to output
 output_file <- paste("RES", taxa_level, "counts.diversity.tsv", sep=".")
 outfile <- paste(output_dir, output_file, sep="/")
