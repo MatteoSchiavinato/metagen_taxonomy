@@ -160,10 +160,14 @@ The `kraken` directory will contain one subdirectory per analyzed sample. Each s
 
 Inside the `bracken` subdirectory, there will be one folder for each sample. Each of these sample folders will contain seven other directories: S, G, F, C, O, P, D. These stand for species, genus, family, class, order, phylum, domain. The abundance re-estimation is performed at each of these levels, so you can choose what level you prefer to consider for your analysis later on.
 
+Using the `--genus_only` option, the workflow will perform a kraken2+bracken analysis only at the genus level which is the most common option. Otherwise, it will perform an analysis at any taxonomic rank (S,G,F,C,O,P,D).
+
 ##### Relative abundance
 
-The files contained inside `rel_abundance` will be **relative abundance** plots (both in svg and png) based on the top 10 most represented taxa. There will be one plot for each taxonomic level (S,G,F,C,O,P,D). The associated relative abundance values are contained in the `*.rel_abundance.*` tables. The raw counts from which the relative abundance was estimated are also contained, in files that carry the keyword `*.counts.*`.
+The files contained inside `rel_abundance` will be **relative abundance** tables (`*.rel_abundance.*`) containing the relative abundance values. The raw counts from which the relative abundance was estimated are also contained, in files that carry the keyword `*.counts.*`.
 
 ##### Alpha and beta diversity
 
 The files inside `diversity` represents **diversity** tables. Each table represents a diversity analysis performed at a different taxonomic level (S,G,F,C,O,P,D). The diversity scores are obtined from the `*.counts.*` tables found inside the `rel_abundance` directory. The diversity analysis performed includes alpha diversity (richness, evenness) and beta diversity (dissimilarity). The evenness values depend on the setting chosen with `--evenness`. The setting influences the type of calculation performed, see R documentation for details. The same applies to the `--dissimilarity` option. Default settings are `--evenness shannon` and `--dissimilarity bray`, which are commonly employed in metagenomic workflows.
+
+Using the `--skip_diversity`  option, the tool will only perform a kraken2+bracken analysis without performing any diversity analysis. This could reduce computational times but returns incomplete results. 

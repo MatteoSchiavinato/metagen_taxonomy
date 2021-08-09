@@ -489,7 +489,7 @@ if (params.genus_only == false) {
 
     output:
       path "${sample_id}" into Bracken_out
-      tuple val("G"), file("${sample_id}/G/${sample_id}.G.bracken.report") into Bracken_reports
+      tuple val("G"), file("${sample_id}/G/${sample_id}.G.bracken.report") into Bracken_G
 
     script:
       """
@@ -509,6 +509,11 @@ if (params.genus_only == false) {
 
       """
   }
+
+  Bracken_G
+    .groupTuple()
+    .map{ it -> [ it[0], it[1].collect() ] }
+    .set{ Bracken_reports }
 }
 
 
