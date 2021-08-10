@@ -19,12 +19,18 @@ dissimilarity_method <- args[5]
 # read dataframe
 x <- read.table(infile, header=T, row.names=1, sep="\t")
 
-# detect potential rows with only zero counts values
+# detect potential samples with no counts
 # these make beta diversity calculations impossible
 # isolate them for later
 all_zero_samples <- as.character(colnames(x[ , colSums(x) == 0]))
 all_zero_df <- as.data.frame(matrix(nrow=length(all_zero_samples), ncol=5))
 colnames(all_zero_df) <- c("Sample", "Richness", "Evenness", "MDS1", "MDS2")
+
+# detect potential rows with no counts in any sample
+# for example, no "Unclassified" in any sample
+# rare, but can happen
+# remove these lines
+x = x[rowSums(x) > 0, ]
 
 if (length(all_zero_samples) > 0) {
   # store information on samples that have only zero counts

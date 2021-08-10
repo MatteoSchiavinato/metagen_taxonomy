@@ -10,11 +10,12 @@ echo """\
 #SBATCH --mail-type FAIL,END
 #SBATCH --mail-user matteo.schiavinato@boku.ac.at
 #SBATCH --account p71579
-#SBATCH --qos mem_0384
-#SBATCH --partition mem_0384
+#SBATCH --qos mem_0096
+#SBATCH --partition mem_0096
 
 cd ${WD}/scripts
 
+export OMP_NUM_THREADS=4
 module load gcc
 
 nextflow \

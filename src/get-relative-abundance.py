@@ -43,6 +43,7 @@ df_count = pd.DataFrame()
 
 # iterate over all files
 sys.stderr.write("[{0}] Filling empty dataframes with actual data from input\n".format(at()))
+Tot_reads = {}
 
 for FILENAME in Input_files:
 
@@ -62,12 +63,21 @@ for FILENAME in Input_files:
 	tmp.columns = ["Fraction", "Counts", "Added", "Taxrank", "Taxid"]
 	tmp.index = tmp.index.rename("Taxa")
 
+	# store total number of reads for each sample
+	try:
+		Tot_reads[sample] = int(tmp.loc[tmp["Taxrank"]=="R", "Counts"][0])
+	except IndexError:
+		Tot_reads[sample] = 0
+
 	# select only lines corresponding to the specific classification level
 	mask = tmp["Taxrank"] == args.classif_level
 	tmp = tmp.loc[mask , :]
 
-	# remove whitespaces
+	# remove whitespaces at the beginning
 	tmp.index = tmp.index.str.strip(" ")
+
+	# substitute whitespaces in between with underscores
+	tmp.index = tmp.index.str.replace(" ", "_")
 
 	# subdivide into fraction and counts dataframes
 	tmp_frac = tmp.loc[: , ["Fraction"]]
@@ -76,6 +86,20 @@ for FILENAME in Input_files:
 	# rename column with sample name
 	tmp_frac.columns = [sample]
 	tmp_count.columns = [sample]
+
+	# remove "uncultured"
+	# as it does not really indicate a taxon
+	tmp_frac = tmp_frac.loc[tmp_frac.index != "uncultured", :]
+	tmp_count = tmp_count.loc[tmp_count.index != "uncultured", :]
+
+	# add "Unassigned" row
+	unassigned = int(Tot_reads[sample] - tmp_count.sum())
+	try:
+		unassigned_frac = float(unassigned) / float(Tot_reads[sample]) * 100
+	except ZeroDivisionError:
+		unassigned_frac = float(100)
+	tmp_count.loc["Unassigned", sample] = unassigned
+	tmp_frac.loc["Unassigned", sample] = unassigned_frac
 
 	# join with main dataframe
 	df_frac = df_frac.join(tmp_frac, how="outer")
