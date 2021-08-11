@@ -19,6 +19,9 @@ dissimilarity_method <- args[5]
 # read dataframe
 x <- read.table(infile, header=T, row.names=1, sep="\t")
 
+# remove unassigned to avoid counting them as taxa
+x <- x[row.names(x) != "Unassigned" , ]
+
 # detect potential samples with no counts
 # these make beta diversity calculations impossible
 # isolate them for later

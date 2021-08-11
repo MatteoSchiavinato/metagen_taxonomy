@@ -7,6 +7,7 @@ import sys
 import os
 import argparse as ap
 from time import asctime as at
+import re
 
 # arguments
 p = ap.ArgumentParser()
@@ -57,7 +58,7 @@ for FILENAME in Input_files:
 		tmp = pd.DataFrame(columns = [i for i in range(0,5)])
 
 	# extract sample name
-	sample = FILENAME.split("/")[-1].split(".")[0]
+	sample = re.sub(r'\.[DPOCFGS].bracken.report', '', FILENAME.split("/")[-1])
 
 	# rename columns and index
 	tmp.columns = ["Fraction", "Counts", "Added", "Taxrank", "Taxid"]
@@ -107,8 +108,10 @@ for FILENAME in Input_files:
 
 # sorting dataframe columns
 sys.stderr.write("[{0}] Sorting dataframe\n".format(at()))
-df_frac.columns = sorted(df_frac.columns.to_list())
-df_count.columns = sorted(df_count.columns.to_list())
+new_columns = sorted(df_frac.columns.to_list())
+new_columns = sorted(df_count.columns.to_list())
+df_frac = df_frac.loc[:,new_columns]
+df_count = df_count.loc[:,new_columns]
 
 # remove NaN
 sys.stderr.write("[{0}] Converting NaN to 0\n".format(at()))
