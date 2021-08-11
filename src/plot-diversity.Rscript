@@ -1,0 +1,155 @@
+#!/usr/bin/env Rscript
+
+library("reshape2")
+library("ggplot2")
+library("ggpubr")
+library("rstatix")
+library("dplyr")
+
+
+args <- commandArgs(trailingOnly=TRUE)
+# infile <- args[1]
+# output_dir <- args[2]
+infile <- "RES.combined_info.tsv"
+output_dir <- "."
+
+df <- read.table(infile, sep="\t", header=T)
+df <- df[order(df$Sample), ]
+df$Temperature <- as.character(df$Temperature)
+colnames(df) <- gsub("Evenness", "Shannon", colnames(df))
+row.names(df) <- NULL
+
+# ----------------------------------
+### WARNING: REMOVE THIS SECTION ###
+# just for this test
+df <- df[seq(1,384,2), ]
+row.names(df) <- NULL
+### WARNING: REMOVE THIS SECTION ###
+# ----------------------------------
+
+# alpha diversity parameters
+
+plotHeight <- 800
+plotWidth <- 800
+plotRes <-200
+
+myColors <- c("heat-labile"="#E5989B", "heat-stable"="#80CED7",
+              "110"="#ABC798", "120"="#297373")
+
+# ------------------------------------------------------------------------------
+
+### RICHNESS + EVENNESS || CECUM || VARIETY ###
+df_sub <- df[df$Gut.section == "Caecum", ]
+df_sub <- df_sub[ , c("Sample", "Variety", "Richness", "Shannon")]
+df_sub <- melt(df_sub, id_vars=c("Sample", "Variety"))
+
+P1 <- ggboxplot(data=df_sub, x="Variety", y="value", fill="Variety") +
+theme_classic() +
+theme(aspect.ratio=1.5) +
+stat_compare_means(size=2.5, method="kruskal.test") +
+scale_fill_manual(name="", values=myColors, guide=F) +
+scale_y_continuous(breaks=seq(0,15,1), expand = expansion(mult = c(0.1, 0.2))) +
+facet_wrap(~variable, scales="free_y", shrink=TRUE)
+
+png(paste(output_dir, paste("RES", "caecum", "variety", "png", sep="."), sep="/"),
+	height=plotHeight, width=plotWidth, res=plotRes)
+P1
+dev.off()
+
+
+
+### RICHNESS + EVENNESS || ILEUM || VARIETY ###
+df_sub <- df[df$Gut.section == "Ileum", ]
+df_sub <- df_sub[ , c("Sample", "Variety", "Richness", "Shannon")]
+df_sub <- melt(df_sub, id_vars=c("Sample", "Variety"))
+
+P1 <- ggboxplot(data=df_sub, x="Variety", y="value", fill="Variety") +
+theme_classic() +
+theme(aspect.ratio=1.5) +
+stat_compare_means(size=2.5, method="kruskal.test") +
+scale_fill_manual(name="", values=myColors, guide=F) +
+scale_y_continuous(breaks=seq(0,15,1), expand = expansion(mult = c(0.1, 0.2))) +
+facet_wrap(~variable, scales="free_y", shrink=TRUE)
+
+png(paste(output_dir, paste("RES", "ileum", "variety", "png", sep="."), sep="/"),
+	height=plotHeight, width=plotWidth, res=plotRes)
+P1
+dev.off()
+
+
+# ------------------------------------------------------------------------------
+
+
+### RICHNESS + EVENNESS || CECUM || TEMPERATURE ###
+df_sub <- df[df$Gut.section == "Caecum", ]
+df_sub <- df_sub[ , c("Sample", "Temperature", "Richness", "Shannon")]
+df_sub <- melt(df_sub, id_vars=c("Sample", "Temperature"))
+
+P1 <- ggboxplot(data=df_sub, x="Temperature", y="value", fill="Temperature") +
+theme_classic() +
+theme(aspect.ratio=1.5) +
+stat_compare_means(size=2.5, method="kruskal.test") +
+scale_fill_manual(name="", values=myColors, guide=F) +
+scale_y_continuous(breaks=seq(0,15,1), expand = expansion(mult = c(0.1, 0.2))) +
+facet_wrap(~variable, scales="free_y", shrink=TRUE)
+
+png(paste(output_dir, paste("RES", "caecum", "temperature", "png", sep="."), sep="/"),
+	height=plotHeight, width=plotWidth, res=plotRes)
+P1
+dev.off()
+
+
+### RICHNESS + EVENNESS || ILEUM || TEMPERATURE ###
+df_sub <- df[df$Gut.section == "Ileum", ]
+df_sub <- df_sub[ , c("Sample", "Temperature", "Richness", "Shannon")]
+df_sub <- melt(df_sub, id_vars=c("Sample", "Temperature"))
+
+P1 <- ggboxplot(data=df_sub, x="Temperature", y="value", fill="Temperature") +
+theme_classic() +
+theme(aspect.ratio=1.5) +
+stat_compare_means(size=2.5, method="kruskal.test") +
+scale_fill_manual(name="", values=myColors, guide=F) +
+scale_y_continuous(breaks=seq(0,15,1), expand = expansion(mult = c(0.1, 0.2))) +
+facet_wrap(~variable, scales="free_y", shrink=TRUE)
+
+png(paste(output_dir, paste("RES", "ileum", "temperature", "png", sep="."), sep="/"),
+	height=plotHeight, width=plotWidth, res=plotRes)
+P1
+dev.off()
+
+
+# ------------------------------------------------------------------------------
+
+### RICHNESS + EVENNESS || CECUM vs ILEUM ###
+
+# beta diversity
+
+### DISSIMILARITY || CECUM || VARIETY ###
+df_sub <- df[df$Gut.section == "Caecum", ]
+
+### DISSIMILARITY || ILEUM || VARIETY ###
+df_sub <- df[df$Gut.section == "Ileum", ]
+
+### DISSIMILARITY || CECUM || TEMPERATURE ###
+df_sub <- df[df$Gut.section == "Caecum", ]
+
+### DISSIMILARITY || ILEUM || TEMPERATURE ###
+df_sub <- df[df$Gut.section == "Ileum", ]
+
+### DISSIMILARITY || CECUM vs ILEUM ###
+
+# statistical testing
+
+### KRUSKAL-WALLIS + MANN WHITNEY on SEX in CECUM || VARIETY ###
+df_sub <- df[df$Gut.section == "Caecum", ]
+
+### KRUSKAL-WALLIS + MANN WHITNEY on SEX in CECUM || TEMPERATURE ###
+df_sub <- df[df$Gut.section == "Caecum", ]
+
+### KRUSKAL-WALLIS + MANN WHITNEY on SEX in ILEUM || VARIETY ###
+df_sub <- df[df$Gut.section == "Ileum", ]
+
+### KRUSKAL-WALLIS + MANN WHITNEY on SEX in ILEUM || TEMPERATURE ###
+df_sub <- df[df$Gut.section == "Ileum", ]
+
+### KRUSKAL-WALLIS + MANN WHITNEY on CECUM vs ILEUM without SEX ###
