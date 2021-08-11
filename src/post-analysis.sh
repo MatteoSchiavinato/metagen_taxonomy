@@ -29,8 +29,8 @@ sort \
 > read_counts.tsv
 
 # ------------------------------------------------------------------------------
-# create file with read counts and fractions 
-# ready for publication 
+# create file with read counts and fractions
+# ready for publication
 
 cd ${WD}
 
@@ -44,7 +44,7 @@ awk '{print $0"\t"$3/$2*100}'; } \
 > manuscript/File_READS.tsv
 
 # ------------------------------------------------------------------------------
-# count annotated reads at any taxonomic rank 
+# count annotated reads at any taxonomic rank
 cd ${WD}/taxonomy/rel_abundance
 
 unset X
@@ -73,18 +73,33 @@ cd $WD/taxonomy/diversity
 if [ ! -d plots ]; then mkdir plots; fi
 cd plots
 
-python3.8 \
-${WD}/scripts/src/combine-information.py
+unset X
+declare -a X=(G F P)
+for TAX_RANK in ${X[@]}
+do
+${WD}/scripts/src/combine-information.py \
+${WD}/raw_data/sample_description.tsv \
+${WD}/taxonomy/diversity/RES.${TAX_RANK}.counts.diversity.tsv \
+${WD}/taxonomy/diversity/plots \
+${TAX_RANK}
+done
 
 # ------------------------------------------------------------------------------
 # plot diversity
 
 cd $WD/taxonomy/diversity/plots
 
+unset X
+# declare -a X=(G F P)
+declare -a X=(G)
+for TAX_RANK in ${X[@]}
+do
+if [ ! -d ${TAX_RANK} ]; then mkdir ${TAX_RANK}; fi &&
 Rscript \
 ${WD}/scripts/src/plot-diversity.Rscript \
-RES.G.counts.diversity.tsv \
-. 
+RES.${TAX_RANK}.combined_info.tsv \
+${TAX_RANK}
+done
 
 cp taxonomy/diversity/RES.F.counts.diversity.tsv manuscript/File_DIVERSITY_FAMILY.tsv
 cp taxonomy/diversity/RES.G.counts.diversity.tsv manuscript/File_DIVERSITY_GENUS.tsv
