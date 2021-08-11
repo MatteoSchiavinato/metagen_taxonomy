@@ -7,7 +7,7 @@ library("rstatix")
 library("dplyr")
 
 
-args <- commandArgs(trailingOnly=TRUE)
+# args <- commandArgs(trailingOnly=TRUE)
 # infile <- args[1]
 # output_dir <- args[2]
 infile <- "RES.combined_info.tsv"
@@ -19,22 +19,29 @@ df$Temperature <- as.character(df$Temperature)
 colnames(df) <- gsub("Evenness", "Shannon", colnames(df))
 row.names(df) <- NULL
 
-# ----------------------------------
-### WARNING: REMOVE THIS SECTION ###
-# just for this test
-df <- df[seq(1,384,2), ]
-row.names(df) <- NULL
-### WARNING: REMOVE THIS SECTION ###
-# ----------------------------------
-
 # alpha diversity parameters
 
-plotHeight <- 800
-plotWidth <- 800
-plotRes <-200
+plotHeight <- 900
+plotWidth <- 900
+plotRes <-300
 
 myColors <- c("heat-labile"="#E5989B", "heat-stable"="#80CED7",
-              "110"="#ABC798", "120"="#297373")
+              "110"="#ABC798", "120"="#297373",
+              "Caecum"="#B5838D", "Ileum"="#FFB4A2",
+              "m"="#EF476F", "w"="#FFD166",
+              "Caecum m"="#EF476F", "Caecum w"="#FFD166", "Ileum m"="#B5838D", "Ileum w"="#FFB4A2",
+              "Caecum heat-labile"="#E5989B", "Caecum heat-stable"="#80CED7", "Ileum heat-labile"="#EF476F", "Ileum heat-stable"="#FFD166",
+              "m heat-labile"="#EF476F", "m heat-stable"="#ABC798", "w heat-labile"="#FFD166", "w heat-stable"="#297373")
+
+
+sampleColors <- c("m 110 Caecum heat-labile"="#335C67", "m 110 Caecum heat-stable"="#A7BBEC",
+                "m 110 Ileum heat-labile"="#99A88C", "m 110 Ileum heat-stable"="#E9D147",
+                "m 120 Caecum heat-labile"="#F0C977", "m 120 Caecum heat-stable"="#E09F3E",
+                "m 120 Ileum heat-labile"="#BF6535", "m 120 Ileum heat-stable"="#9E2A2B",
+                "w 110 Caecum heat-labile"="#D17B88", "w 110 Caecum heat-stable"="#540B0E",
+                "w 110 Ileum heat-labile"="#380036", "w 110 Ileum heat-stable"="#CB48B7",
+                "w 120 Caecum heat-labile"="#F72C25", "w 120 Caecum heat-stable"="#8B5D33",
+                "w 120 Ileum heat-labile"="#355E34", "w 120 Ileum heat-stable"="#67B865")
 
 # ------------------------------------------------------------------------------
 
@@ -42,18 +49,35 @@ myColors <- c("heat-labile"="#E5989B", "heat-stable"="#80CED7",
 df_sub <- df[df$Gut.section == "Caecum", ]
 df_sub <- df_sub[ , c("Sample", "Variety", "Richness", "Shannon")]
 df_sub <- melt(df_sub, id_vars=c("Sample", "Variety"))
+df_sub_rich <- df_sub[df_sub$variable=="Richness", ]
+df_sub_even <- df_sub[df_sub$variable=="Shannon", ]
 
-P1 <- ggboxplot(data=df_sub, x="Variety", y="value", fill="Variety") +
+P1 <- ggboxplot(data=df_sub_rich, x="Variety", y="value", fill="Variety") +
 theme_classic() +
 theme(aspect.ratio=1.5) +
-stat_compare_means(size=2.5, method="kruskal.test") +
+stat_compare_means(size=2.5, method="wilcox", label.y=25) +
+stat_compare_means(size=2.5, method="kruskal.test", label.y=23) +
+stat_compare_means(size=2.5, method="anova", label.y=21) +
 scale_fill_manual(name="", values=myColors, guide=F) +
-scale_y_continuous(breaks=seq(0,15,1), expand = expansion(mult = c(0.1, 0.2))) +
-facet_wrap(~variable, scales="free_y", shrink=TRUE)
+scale_y_continuous(name="Richness", breaks=seq(0,20,2), expand = expansion(mult = c(0.1, 0.2)))
 
-png(paste(output_dir, paste("RES", "caecum", "variety", "png", sep="."), sep="/"),
+png(paste(output_dir, paste("RES", "caecum", "variety", "richness", "png", sep="."), sep="/"),
 	height=plotHeight, width=plotWidth, res=plotRes)
 P1
+dev.off()
+
+P2 <- ggboxplot(data=df_sub_even, x="Variety", y="value", fill="Variety") +
+theme_classic() +
+theme(aspect.ratio=1.5) +
+stat_compare_means(size=2.5, method="wilcox", label.y=3.0) +
+stat_compare_means(size=2.5, method="kruskal.test", label.y=2.75) +
+stat_compare_means(size=2.5, method="anova", label.y=2.50) +
+scale_fill_manual(name="", values=myColors, guide=F) +
+scale_y_continuous(name="Shannon index", breaks=seq(0,2.25,0.25), expand = expansion(mult = c(0.1, 0.2)))
+
+png(paste(output_dir, paste("RES", "caecum", "variety", "shannon", "png", sep="."), sep="/"),
+	height=plotHeight, width=plotWidth, res=plotRes)
+P2
 dev.off()
 
 
@@ -62,18 +86,35 @@ dev.off()
 df_sub <- df[df$Gut.section == "Ileum", ]
 df_sub <- df_sub[ , c("Sample", "Variety", "Richness", "Shannon")]
 df_sub <- melt(df_sub, id_vars=c("Sample", "Variety"))
+df_sub_rich <- df_sub[df_sub$variable=="Richness", ]
+df_sub_even <- df_sub[df_sub$variable=="Shannon", ]
 
-P1 <- ggboxplot(data=df_sub, x="Variety", y="value", fill="Variety") +
+P1 <- ggboxplot(data=df_sub_rich, x="Variety", y="value", fill="Variety") +
 theme_classic() +
 theme(aspect.ratio=1.5) +
-stat_compare_means(size=2.5, method="kruskal.test") +
+stat_compare_means(size=2.5, method="wilcox", label.y=27) +
+stat_compare_means(size=2.5, method="kruskal.test", label.y=25) +
+stat_compare_means(size=2.5, method="anova", label.y=23) +
 scale_fill_manual(name="", values=myColors, guide=F) +
-scale_y_continuous(breaks=seq(0,15,1), expand = expansion(mult = c(0.1, 0.2))) +
-facet_wrap(~variable, scales="free_y", shrink=TRUE)
+scale_y_continuous(name="Richness", breaks=seq(0,22,2), expand = expansion(mult = c(0.1, 0.2)))
 
-png(paste(output_dir, paste("RES", "ileum", "variety", "png", sep="."), sep="/"),
+png(paste(output_dir, paste("RES", "ileum", "variety", "richness", "png", sep="."), sep="/"),
 	height=plotHeight, width=plotWidth, res=plotRes)
 P1
+dev.off()
+
+P2 <- ggboxplot(data=df_sub_even, x="Variety", y="value", fill="Variety") +
+theme_classic() +
+theme(aspect.ratio=1.5) +
+stat_compare_means(size=2.5, method="wilcox", label.y=3.0) +
+stat_compare_means(size=2.5, method="kruskal.test", label.y=2.75) +
+stat_compare_means(size=2.5, method="anova", label.y=2.50) +
+scale_fill_manual(name="", values=myColors, guide=F) +
+scale_y_continuous(name="Shannon index", breaks=seq(0,2.25,0.25), expand = expansion(mult = c(0.1, 0.2)))
+
+png(paste(output_dir, paste("RES", "ileum", "variety", "shannon", "png", sep="."), sep="/"),
+	height=plotHeight, width=plotWidth, res=plotRes)
+P2
 dev.off()
 
 
@@ -84,18 +125,35 @@ dev.off()
 df_sub <- df[df$Gut.section == "Caecum", ]
 df_sub <- df_sub[ , c("Sample", "Temperature", "Richness", "Shannon")]
 df_sub <- melt(df_sub, id_vars=c("Sample", "Temperature"))
+df_sub_rich <- df_sub[df_sub$variable=="Richness", ]
+df_sub_even <- df_sub[df_sub$variable=="Shannon", ]
 
-P1 <- ggboxplot(data=df_sub, x="Temperature", y="value", fill="Temperature") +
+P1 <- ggboxplot(data=df_sub_rich, x="Temperature", y="value", fill="Temperature") +
 theme_classic() +
 theme(aspect.ratio=1.5) +
-stat_compare_means(size=2.5, method="kruskal.test") +
+stat_compare_means(size=2.5, method="wilcox", label.y=25) +
+stat_compare_means(size=2.5, method="kruskal.test", label.y=23) +
+stat_compare_means(size=2.5, method="anova", label.y=21) +
 scale_fill_manual(name="", values=myColors, guide=F) +
-scale_y_continuous(breaks=seq(0,15,1), expand = expansion(mult = c(0.1, 0.2))) +
-facet_wrap(~variable, scales="free_y", shrink=TRUE)
+scale_y_continuous(name="Richness", breaks=seq(0,20,2), expand = expansion(mult = c(0.1, 0.2)))
 
-png(paste(output_dir, paste("RES", "caecum", "temperature", "png", sep="."), sep="/"),
+png(paste(output_dir, paste("RES", "caecum", "temperature", "richness", "png", sep="."), sep="/"),
 	height=plotHeight, width=plotWidth, res=plotRes)
 P1
+dev.off()
+
+P2 <- ggboxplot(data=df_sub_even, x="Temperature", y="value", fill="Temperature") +
+theme_classic() +
+theme(aspect.ratio=1.5) +
+stat_compare_means(size=2.5, method="wilcox", label.y=3.0) +
+stat_compare_means(size=2.5, method="kruskal.test", label.y=2.75) +
+stat_compare_means(size=2.5, method="anova", label.y=2.50) +
+scale_fill_manual(name="", values=myColors, guide=F) +
+scale_y_continuous(name="Shannon index", breaks=seq(0,2.25,0.25), expand = expansion(mult = c(0.1, 0.2)))
+
+png(paste(output_dir, paste("RES", "caecum", "temperature", "shannon", "png", sep="."), sep="/"),
+	height=plotHeight, width=plotWidth, res=plotRes)
+P2
 dev.off()
 
 
@@ -103,40 +161,368 @@ dev.off()
 df_sub <- df[df$Gut.section == "Ileum", ]
 df_sub <- df_sub[ , c("Sample", "Temperature", "Richness", "Shannon")]
 df_sub <- melt(df_sub, id_vars=c("Sample", "Temperature"))
+df_sub_rich <- df_sub[df_sub$variable=="Richness", ]
+df_sub_even <- df_sub[df_sub$variable=="Shannon", ]
 
-P1 <- ggboxplot(data=df_sub, x="Temperature", y="value", fill="Temperature") +
+P1 <- ggboxplot(data=df_sub_rich, x="Temperature", y="value", fill="Temperature") +
 theme_classic() +
 theme(aspect.ratio=1.5) +
-stat_compare_means(size=2.5, method="kruskal.test") +
+stat_compare_means(size=2.5, method="wilcox", label.y=27) +
+stat_compare_means(size=2.5, method="kruskal.test", label.y=25) +
+stat_compare_means(size=2.5, method="anova", label.y=23) +
 scale_fill_manual(name="", values=myColors, guide=F) +
-scale_y_continuous(breaks=seq(0,15,1), expand = expansion(mult = c(0.1, 0.2))) +
-facet_wrap(~variable, scales="free_y", shrink=TRUE)
+scale_y_continuous(name="Richness", breaks=seq(0,22,2), expand = expansion(mult = c(0.1, 0.2)))
 
-png(paste(output_dir, paste("RES", "ileum", "temperature", "png", sep="."), sep="/"),
+png(paste(output_dir, paste("RES", "ileum", "temperature", "richness", "png", sep="."), sep="/"),
 	height=plotHeight, width=plotWidth, res=plotRes)
 P1
+dev.off()
+
+P2 <- ggboxplot(data=df_sub_even, x="Temperature", y="value", fill="Temperature") +
+theme_classic() +
+theme(aspect.ratio=1.5) +
+stat_compare_means(size=2.5, method="wilcox", label.y=3.0) +
+stat_compare_means(size=2.5, method="kruskal.test", label.y=2.75) +
+stat_compare_means(size=2.5, method="anova", label.y=2.50) +
+scale_fill_manual(name="", values=myColors, guide=F) +
+scale_y_continuous(name="Shannon index", breaks=seq(0,2.25,0.25), expand = expansion(mult = c(0.1, 0.2)))
+
+png(paste(output_dir, paste("RES", "ileum", "temperature", "shannon", "png", sep="."), sep="/"),
+	height=plotHeight, width=plotWidth, res=plotRes)
+P2
 dev.off()
 
 
 # ------------------------------------------------------------------------------
 
 ### RICHNESS + EVENNESS || CECUM vs ILEUM ###
+df_sub <- df
+df_sub <- df_sub[ , c("Gut.section", "Richness", "Shannon")]
+df_sub <- melt(df_sub, id_vars=c("Sample", "Gut.section"))
+df_sub_rich <- df_sub[df_sub$variable=="Richness", ]
+df_sub_even <- df_sub[df_sub$variable=="Shannon", ]
+
+P1 <- ggboxplot(data=df_sub_rich, x="Gut.section", y="value", fill="Gut.section") +
+theme_classic() +
+theme(aspect.ratio=1.5) +
+stat_compare_means(size=2.5, method="wilcox", label.y=27) +
+stat_compare_means(size=2.5, method="kruskal.test", label.y=25) +
+stat_compare_means(size=2.5, method="anova", label.y=23) +
+scale_fill_manual(name="", values=myColors, guide=F) +
+scale_y_continuous(name="Richness", breaks=seq(0,22,2), expand = expansion(mult = c(0.1, 0.2)))
+
+png(paste(output_dir, paste("RES", "gut_section", "richness", "png", sep="."), sep="/"),
+	height=plotHeight, width=plotWidth, res=plotRes)
+P1
+dev.off()
+
+P2 <- ggboxplot(data=df_sub_even, x="Gut.section", y="value", fill="Gut.section") +
+theme_classic() +
+theme(aspect.ratio=1.5) +
+stat_compare_means(size=2.5, method="wilcox", label.y=3.0) +
+stat_compare_means(size=2.5, method="kruskal.test", label.y=2.75) +
+stat_compare_means(size=2.5, method="anova", label.y=2.50) +
+scale_fill_manual(name="", values=myColors, guide=F) +
+scale_y_continuous(name="Shannon index", breaks=seq(0,2.25,0.25), expand = expansion(mult = c(0.1, 0.2)))
+
+png(paste(output_dir, paste("RES", "gut_section", "shannon", "png", sep="."), sep="/"),
+	height=plotHeight, width=plotWidth, res=plotRes)
+P2
+dev.off()
+
+
+# ------------------------------------------------------------------------------
+
+### RICHNESS + EVENNESS || MAN vs WOMAN ###
+df_sub <- df
+df_sub <- df_sub[ , c("Sex", "Richness", "Shannon")]
+df_sub <- melt(df_sub, id_vars=c("Sample", "Sex"))
+df_sub_rich <- df_sub[df_sub$variable=="Richness", ]
+df_sub_even <- df_sub[df_sub$variable=="Shannon", ]
+
+P1 <- ggboxplot(data=df_sub_rich, x="Sex", y="value", fill="Sex") +
+theme_classic() +
+theme(aspect.ratio=1.5) +
+stat_compare_means(size=2.5, method="wilcox", label.y=27) +
+stat_compare_means(size=2.5, method="kruskal.test", label.y=25) +
+stat_compare_means(size=2.5, method="anova", label.y=23) +
+scale_fill_manual(name="", values=myColors, guide=F) +
+scale_y_continuous(name="Richness", breaks=seq(0,22,2), expand = expansion(mult = c(0.1, 0.2)))
+
+png(paste(output_dir, paste("RES", "sex", "richness", "png", sep="."), sep="/"),
+	height=plotHeight, width=plotWidth, res=plotRes)
+P1
+dev.off()
+
+P2 <- ggboxplot(data=df_sub_even, x="Sex", y="value", fill="Sex") +
+theme_classic() +
+theme(aspect.ratio=1.5) +
+stat_compare_means(size=2.5, method="wilcox", label.y=3.0) +
+stat_compare_means(size=2.5, method="kruskal.test", label.y=2.75) +
+stat_compare_means(size=2.5, method="anova", label.y=2.50) +
+scale_fill_manual(name="", values=myColors, guide=F) +
+scale_y_continuous(name="Shannon index", breaks=seq(0,2.25,0.25), expand = expansion(mult = c(0.1, 0.2)))
+
+png(paste(output_dir, paste("RES", "sex", "shannon", "png", sep="."), sep="/"),
+	height=plotHeight, width=plotWidth, res=plotRes)
+P2
+dev.off()
+
+
+# ------------------------------------------------------------------------------
+
+plotHeight <- 1500
+plotWidth <- 2500
+plotRes <-300
+
 
 # beta diversity
 
+
 ### DISSIMILARITY || CECUM || VARIETY ###
 df_sub <- df[df$Gut.section == "Caecum", ]
+df_sub <- df_sub[ , c("Sample", "Variety", "MDS1", "MDS2")]
+
+P1 <- ggplot(data=df_sub, mapping=aes(x=MDS1, y=MDS2, color=Variety, fill=Variety)) +
+theme_classic() +
+theme(aspect.ratio=1) +
+geom_point(na.rm=T, size=2) +
+stat_ellipse(geom="path", size=0.6, show.legend=F, type="t", level=0.95, segments=51) +
+scale_x_continuous() +
+scale_y_continuous() +
+scale_fill_manual(name="", values=myColors) +
+scale_color_manual(name="", values=myColors)
+
+png(paste(output_dir, paste("RES", "caceum", "variety", "NMDS", "png", sep="."), sep="/"),
+	height=plotHeight, width=plotWidth, res=plotRes)
+P1
+dev.off()
 
 ### DISSIMILARITY || ILEUM || VARIETY ###
 df_sub <- df[df$Gut.section == "Ileum", ]
+df_sub <- df_sub[ , c("Sample", "Variety", "MDS1", "MDS2")]
+
+P1 <- ggplot(data=df_sub, mapping=aes(x=MDS1, y=MDS2, color=Variety, fill=Variety)) +
+theme_classic() +
+theme(aspect.ratio=1) +
+geom_point(na.rm=T, size=2) +
+stat_ellipse(geom="path", size=0.6, show.legend=F, type="t", level=0.95, segments=51) +
+scale_x_continuous() +
+scale_y_continuous() +
+scale_fill_manual(name="", values=myColors) +
+scale_color_manual(name="", values=myColors)
+
+png(paste(output_dir, paste("RES", "ileum", "variety", "NMDS", "png", sep="."), sep="/"),
+	height=plotHeight, width=plotWidth, res=plotRes)
+P1
+dev.off()
+
 
 ### DISSIMILARITY || CECUM || TEMPERATURE ###
 df_sub <- df[df$Gut.section == "Caecum", ]
+df_sub <- df_sub[ , c("Sample", "Temperature", "MDS1", "MDS2")]
+
+P1 <- ggplot(data=df_sub, mapping=aes(x=MDS1, y=MDS2, color=Temperature, fill=Temperature)) +
+theme_classic() +
+theme(aspect.ratio=1) +
+geom_point(na.rm=T, size=2) +
+stat_ellipse(geom="path", size=0.6, show.legend=F, type="t", level=0.95, segments=51) +
+scale_x_continuous() +
+scale_y_continuous() +
+scale_fill_manual(name="", values=myColors) +
+scale_color_manual(name="", values=myColors)
+
+png(paste(output_dir, paste("RES", "caceum", "temperature", "NMDS", "png", sep="."), sep="/"),
+	height=plotHeight, width=plotWidth, res=plotRes)
+P1
+dev.off()
+
 
 ### DISSIMILARITY || ILEUM || TEMPERATURE ###
 df_sub <- df[df$Gut.section == "Ileum", ]
+df_sub <- df_sub[ , c("Sample", "Temperature", "MDS1", "MDS2")]
 
-### DISSIMILARITY || CECUM vs ILEUM ###
+P1 <- ggplot(data=df_sub, mapping=aes(x=MDS1, y=MDS2, color=Temperature, fill=Temperature)) +
+theme_classic() +
+theme(aspect.ratio=1) +
+geom_point(na.rm=T, size=2) +
+stat_ellipse(geom="path", size=0.6, show.legend=F, type="t", level=0.95, segments=51) +
+scale_x_continuous() +
+scale_y_continuous() +
+scale_fill_manual(name="", values=myColors) +
+scale_color_manual(name="", values=myColors)
+
+png(paste(output_dir, paste("RES", "ileum", "temperature", "NMDS", "png", sep="."), sep="/"),
+	height=plotHeight, width=plotWidth, res=plotRes)
+P1
+dev.off()
+
+
+### DISSIMILARITY || gut section ###
+df_sub <- df
+df_sub <- df_sub[ , c("Sample", "Gut.section", "MDS1", "MDS2")]
+
+P1 <- ggplot(data=df_sub, mapping=aes(x=MDS1, y=MDS2, color=Gut.section, fill=Gut.section)) +
+theme_classic() +
+theme(aspect.ratio=1) +
+geom_point(na.rm=T, size=2) +
+stat_ellipse(geom="path", size=0.6, show.legend=F, type="t", level=0.95, segments=51) +
+scale_x_continuous() +
+scale_y_continuous() +
+scale_fill_manual(name="", values=myColors) +
+scale_color_manual(name="", values=myColors)
+
+png(paste(output_dir, paste("RES", "all", "gut_section", "NMDS", "png", sep="."), sep="/"),
+	height=plotHeight, width=plotWidth, res=plotRes)
+P1
+dev.off()
+
+
+### DISSIMILARITY || sex ###
+df_sub <- df
+df_sub <- df_sub[ , c("Sample", "Sex", "MDS1", "MDS2")]
+
+P1 <- ggplot(data=df_sub, mapping=aes(x=MDS1, y=MDS2, color=Sex, fill=Sex)) +
+theme_classic() +
+theme(aspect.ratio=1) +
+geom_point(na.rm=T, size=2) +
+stat_ellipse(geom="path", size=0.6, show.legend=F, type="t", level=0.95, segments=51) +
+scale_x_continuous() +
+scale_y_continuous() +
+scale_fill_manual(name="", values=myColors) +
+scale_color_manual(name="", values=myColors)
+
+png(paste(output_dir, paste("RES", "all", "sex", "NMDS", "png", sep="."), sep="/"),
+	height=plotHeight, width=plotWidth, res=plotRes)
+P1
+dev.off()
+
+### DISSIMILARITY || gut section + sex ###
+df_sub <- df
+df_sub$Condition <- paste(df$Gut.section, df$Sex)
+df_sub <- df_sub[ , c("Sample", "Condition", "MDS1", "MDS2")]
+
+P1 <- ggplot(data=df_sub, mapping=aes(x=MDS1, y=MDS2, color=Condition, fill=Condition)) +
+theme_classic() +
+theme(aspect.ratio=1) +
+geom_point(na.rm=T, size=2) +
+stat_ellipse(geom="path", size=0.6, show.legend=F, type="t", level=0.95, segments=51) +
+scale_x_continuous() +
+scale_y_continuous() +
+scale_fill_manual(name="", values=myColors) +
+scale_color_manual(name="", values=myColors)
+
+png(paste(output_dir, paste("RES", "all", "gut_section_and_sex", "NMDS", "png", sep="."), sep="/"),
+	height=plotHeight, width=plotWidth, res=plotRes)
+P1
+dev.off()
+
+### DISSIMILARITY || gut section + variety ###
+df_sub <- df
+df_sub$Condition <- paste(df$Gut.section, df$Variety)
+df_sub <- df_sub[ , c("Sample", "Condition", "MDS1", "MDS2")]
+
+P1 <- ggplot(data=df_sub, mapping=aes(x=MDS1, y=MDS2, color=Condition, fill=Condition)) +
+theme_classic() +
+theme(aspect.ratio=1) +
+geom_point(na.rm=T, size=2) +
+stat_ellipse(geom="path", size=0.6, show.legend=F, type="t", level=0.95, segments=51) +
+scale_x_continuous() +
+scale_y_continuous() +
+scale_fill_manual(name="", values=myColors) +
+scale_color_manual(name="", values=myColors)
+
+png(paste(output_dir, paste("RES", "all", "gut_section_and_variety", "NMDS", "png", sep="."), sep="/"),
+	height=plotHeight, width=plotWidth, res=plotRes)
+P1
+dev.off()
+
+
+### DISSIMILARITY || Sex + variety ###
+df_sub <- df
+df_sub$Condition <- paste(df$Sex, df$Variety)
+df_sub <- df_sub[ , c("Sample", "Condition", "MDS1", "MDS2")]
+
+P1 <- ggplot(data=df_sub, mapping=aes(x=MDS1, y=MDS2, color=Condition, fill=Condition)) +
+theme_classic() +
+theme(aspect.ratio=1) +
+geom_point(na.rm=T, size=2) +
+stat_ellipse(geom="path", size=0.6, show.legend=F, type="t", level=0.95, segments=51) +
+scale_x_continuous() +
+scale_y_continuous() +
+scale_fill_manual(name="", values=myColors) +
+scale_color_manual(name="", values=myColors)
+
+png(paste(output_dir, paste("RES", "all", "sex_and_variety", "NMDS", "png", sep="."), sep="/"),
+	height=plotHeight, width=plotWidth, res=plotRes)
+P1
+dev.off()
+
+
+### DISSIMILARITY || all categories ###
+df_sub <- df
+df_sub$Condition <- paste(df$Sex, df$Temperature, df$Gut.section, df$Variety)
+df_sub <- df_sub[ , c("Sample", "Condition", "MDS1", "MDS2")]
+
+P1 <- ggplot(data=df_sub, mapping=aes(x=MDS1, y=MDS2, color=Condition, fill=Condition)) +
+theme_classic() +
+theme(aspect.ratio=1) +
+geom_point(na.rm=T, size=2) +
+stat_ellipse(geom="path", size=0.6, show.legend=F, type="t", level=0.95, segments=51) +
+scale_x_continuous() +
+scale_y_continuous() +
+scale_fill_manual(name="", values=sampleColors) +
+scale_color_manual(name="", values=sampleColors)
+
+png(paste(output_dir, paste("RES", "all", "all", "NMDS", "png", sep="."), sep="/"),
+	height=plotHeight, width=plotWidth, res=plotRes)
+P1
+dev.off()
+
+
+### DISSIMILARITY || Caecum || 110 || variety and sex ###
+df_sub <- df[df$Gut.section == "Caecum" & df$Temperature == 110, ]
+df_sub$Condition <- paste(df_sub$Sex, df_sub$Temperature, df_sub$Gut.section, df_sub$Variety)
+df_sub <- df_sub[ , c("Sample", "Condition", "MDS1", "MDS2")]
+
+P1 <- ggplot(data=df_sub, mapping=aes(x=MDS1, y=MDS2, color=Condition, fill=Condition)) +
+theme_classic() +
+theme(aspect.ratio=1) +
+geom_point(na.rm=T, size=2) +
+stat_ellipse(geom="path", size=0.6, show.legend=F, type="t", level=0.95, segments=51) +
+scale_x_continuous() +
+scale_y_continuous() +
+scale_fill_manual(name="", values=sampleColors) +
+scale_color_manual(name="", values=sampleColors)
+
+png(paste(output_dir, paste("RES", "110_caecum", "variety_and_sex", "NMDS", "png", sep="."), sep="/"),
+	height=plotHeight, width=plotWidth, res=plotRes)
+P1
+dev.off()
+
+### DISSIMILARITY || Ileum || 110 || variety and sex ###
+df_sub <- df[df$Gut.section == "Ileum" & df$Temperature == 110, ]
+df_sub$Condition <- paste(df_sub$Sex, df_sub$Temperature, df_sub$Gut.section, df_sub$Variety)
+df_sub <- df_sub[ , c("Sample", "Condition", "MDS1", "MDS2")]
+
+P1 <- ggplot(data=df_sub, mapping=aes(x=MDS1, y=MDS2, color=Condition, fill=Condition)) +
+theme_classic() +
+theme(aspect.ratio=1) +
+geom_point(na.rm=T, size=2) +
+stat_ellipse(geom="path", size=0.6, show.legend=F, type="t", level=0.95, segments=51) +
+scale_x_continuous() +
+scale_y_continuous() +
+scale_fill_manual(name="", values=sampleColors) +
+scale_color_manual(name="", values=sampleColors)
+
+png(paste(output_dir, paste("RES", "110_ileum", "variety_and_sex", "NMDS", "png", sep="."), sep="/"),
+	height=plotHeight, width=plotWidth, res=plotRes)
+P1
+dev.off()
+
+
+
+# ------------------------------------------------------------------------------
 
 # statistical testing
 

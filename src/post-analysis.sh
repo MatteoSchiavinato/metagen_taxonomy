@@ -30,7 +30,7 @@ sort \
 
 # ------------------------------------------------------------------------------
 # combine sample information and sample diversity values
-cd $WD/diversity
+cd $WD/taxonomy/diversity
 if [ ! -d plots ]; then mkdir plots; fi
 cd plots
 
@@ -40,36 +40,9 @@ ${WD}/scripts/src/combine-information.py
 # ------------------------------------------------------------------------------
 # plot diversity
 
-# cd $WD/diversity/plots
-
-cd /gpfs/data/fs71579/schmat90/CF/projects/meta/M00003_Toasted_soy_diversity/TEST/plots
+cd $WD/taxonomy/diversity/plots
 
 Rscript \
 ${WD}/scripts/src/plot-diversity.Rscript \
 RES.G.counts.diversity.tsv \
-. \
-
-
-# alpha diversity
-
-### RICHNESS + EVENNESS || CECUM || VARIETY ###
-### RICHNESS + EVENNESS || ILEUM || VARIETY ###
-### RICHNESS + EVENNESS || CECUM || TEMPERATURE ###
-### RICHNESS + EVENNESS || ILEUM || TEMPERATURE ###
-### RICHNESS + EVENNESS || CECUM vs ILEUM ###
-
-# beta diversity
-
-### DISSIMILARITY || CECUM || VARIETY ###
-### DISSIMILARITY || ILEUM || VARIETY ###
-### DISSIMILARITY || CECUM || TEMPERATURE ###
-### DISSIMILARITY || ILEUM || TEMPERATURE ###
-### DISSIMILARITY || CECUM vs ILEUM ###
-
-# statistical testing
-
-### KRUSKAL-WALLIS + MANN WHITNEY on SEX in CECUM || VARIETY ###
-### KRUSKAL-WALLIS + MANN WHITNEY on SEX in CECUM || TEMPERATURE ###
-### KRUSKAL-WALLIS + MANN WHITNEY on SEX in ILEUM || VARIETY ###
-### KRUSKAL-WALLIS + MANN WHITNEY on SEX in ILEUM || TEMPERATURE ###
-### KRUSKAL-WALLIS + MANN WHITNEY on CECUM vs ILEUM without SEX ###
+.
