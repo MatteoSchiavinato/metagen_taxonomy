@@ -89,17 +89,27 @@ done
 
 cd $WD/taxonomy/diversity/plots
 
-unset X
-# declare -a X=(G F P)
-declare -a X=(G)
-for TAX_RANK in ${X[@]}
-do
+TAX_RANK="G"
 if [ ! -d ${TAX_RANK} ]; then mkdir ${TAX_RANK}; fi &&
 Rscript \
-${WD}/scripts/src/plot-diversity.Rscript \
+${WD}/scripts/src/plot-diversity.G.Rscript \
 RES.${TAX_RANK}.combined_info.tsv \
 ${TAX_RANK}
-done
+
+TAX_RANK="F"
+if [ ! -d ${TAX_RANK} ]; then mkdir ${TAX_RANK}; fi &&
+Rscript \
+${WD}/scripts/src/plot-diversity.F.Rscript \
+RES.${TAX_RANK}.combined_info.tsv \
+${TAX_RANK}
+
+TAX_RANK="P"
+if [ ! -d ${TAX_RANK} ]; then mkdir ${TAX_RANK}; fi &&
+Rscript \
+${WD}/scripts/src/plot-diversity.P.Rscript \
+RES.${TAX_RANK}.combined_info.tsv \
+${TAX_RANK}
+
 
 cp taxonomy/diversity/RES.F.counts.diversity.tsv manuscript/File_DIVERSITY_FAMILY.tsv
 cp taxonomy/diversity/RES.G.counts.diversity.tsv manuscript/File_DIVERSITY_GENUS.tsv
